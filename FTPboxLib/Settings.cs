@@ -65,7 +65,7 @@ namespace FTPboxLib
             if (!string.IsNullOrWhiteSpace(config))
                 Profiles = (List<AccountController>)JsonConvert.DeserializeObject(config, typeof(List<AccountController>));
 
-            DefaultProfile.InitClient();
+            //TODO: Profile.Load();
 
             if (!File.Exists(ConfCertificates)) return;
             // Load trusted certificates
@@ -110,15 +110,15 @@ namespace FTPboxLib
                 Profiles.Add(def);
             else
                 Profiles[General.DefaultProfile] = def;
+
             try
             {
+                
                 var configProf = JsonConvert.SerializeObject(Profiles, Formatting.Indented);
                 File.WriteAllText(ConfProfiles, configProf);
-                Log.Write(l.Info, "Saved profile settings");
-            }
-            catch(Exception ex)
+            } catch (Exception e)
             {
-                ex.LogException();
+
             }
         }
 
@@ -185,12 +185,14 @@ namespace FTPboxLib
                 Profiles[General.DefaultProfile] = value;
                 SaveProfile();
             }
+        }        
+
+        public static string[] ProfileTitles
+        {
+            get { return Profiles.Select(p => string.Format("{0}@{1}", p.Account.Username, p.Account.Host)).ToArray(); }
         }
 
-        public static string[] ProfileTitles 
-            => Profiles.Select(p => $"{p.Account.Username}@{p.Account.Host}").ToArray();
-
-        #endregion
+        #endregion        
     }
 
     [JsonObject]

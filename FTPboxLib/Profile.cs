@@ -12,7 +12,6 @@
 
 using System;
 using System.Runtime.Serialization;
-using System.Text;
 using Newtonsoft.Json;
 
 namespace FTPboxLib
@@ -35,12 +34,6 @@ namespace FTPboxLib
 	    #region Properties
 
         public string HomePath { get; set; }
-
-        public Encoding Charset
-        {
-            get { return Account.CharacterEncoding != null ? Encoding.GetEncoding(Account.CharacterEncoding) : null; }
-            set { Account.CharacterEncoding = value.HeaderName; }
-        }
 
         public bool AskForPassword = false;
 
@@ -119,7 +112,6 @@ namespace FTPboxLib
         public long KeepAliveInterval = 10;
         public SyncDirection SyncDirection = SyncDirection.Both;
         public string TempFilePrefix = "~ftpb_";
-        public string CharacterEncoding = null;
     }
 
     public class Paths

@@ -10,72 +10,223 @@
  * The client class handles communication with the server, combining the FTP and SFTP libraries.
  */
 
+// #define __MonoCs__
+
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using System.Net;
+using System.Net.Security;
+using System.Security.Authentication;
+using System.Security.Cryptography.X509Certificates;
 using System.Threading;
+using Renci.SshNet;
+using Renci.SshNet.Common;
+using Renci.SshNet.Sftp;
+using FluentFTP;
+#if !__MonoCs__
+using FileIO = Microsoft.VisualBasic.FileIO;
+
+#endif
 
 namespace FTPboxLib
 {
-    public abstract class Client
+    public class Client
     {
+        public Client(AccountController account)
+        {
+            _controller = account;
+            _certificates = new X509Certificate2Collection();
+        }
+
+        #region Private Fields
+
+        private FtpClient _ftpc; // Our FTP client
+        private SftpClient _sftpc; // And our SFTP client
+
         private bool _reconnecting; // true when client is already attempting to reconnect
+
+        private readonly X509Certificate2Collection _certificates;
 
         private Timer _tKeepAlive;
 
-        protected AccountController Controller;
-
-        #region Public Events
-        
-        public event EventHandler<ConnectionClosedEventArgs> ConnectionClosed;
-        public event EventHandler ReconnectingFailed;
-        public virtual event EventHandler<ValidateCertificateEventArgs> ValidateCertificate;
-        public Progress<TransferProgress> TransferProgress = new Progress<TransferProgress>();
+        private readonly AccountController _controller;
 
         #endregion
 
-        /// <summary>
-        ///     Is the client connected to the server?
-        /// </summary>
-        public abstract bool IsConnected { get; }
+        #region Public Events
 
-        public bool ListingFailed { get; private set; }
+        public event EventHandler DownloadComplete;
+        public event EventHandler<ConnectionClosedEventArgs> ConnectionClosed;
+        public event EventHandler ReconnectingFailed;
+        public event EventHandler<ValidateCertificateEventArgs> ValidateCertificate;
+        public event EventHandler<TransferProgressArgs> TransferProgress;
 
-        /// <summary>
-        ///     Get or set the remote working directory
-        /// </summary>
-        public abstract string WorkingDirectory { get; set; }
+        #endregion
 
-        public abstract Encoding Charset { get; }
+        #region Methods
 
         /// <summary>
         ///     Connect to the remote servers, with the details from Profile
         /// </summary>
         /// <param name="reconnecting">True if this is an attempt to re-establish a closed connection</param>
-        public abstract Task Connect(bool reconnecting = false);
+        public void Connect(bool reconnecting = false)
+        {
+            Notifications.ChangeTrayText(reconnecting ? MessageType.Reconnecting : MessageType.Connecting);
+            Log.Write(l.Debug, "{0} client...", reconnecting ? "Reconnecting" : "Connecting");
 
-        /// <summary>
-        ///     Close connection to server
-        /// </summary>
-        public abstract Task Disconnect();
+            if (FTP)
+            {
+                _ftpc = new FtpClient {Host = _controller.Account.Host, Port = _controller.Account.Port};
+
+                // Add accepted certificates
+                _ftpc.ClientCertificates.AddRange(_certificates);
+
+                if (_controller.Account.Protocol == FtpProtocol.FTPS)
+                {
+                    _ftpc.SslProtocols = SslProtocols.Ssl3 | SslProtocols.Tls | SslProtocols.Tls11 | SslProtocols.Tls12;
+                    _ftpc.ValidateCertificate += (sender, x) =>
+                    {
+                        var fingerPrint = new X509Certificate2(x.Certificate).Thumbprint;
+
+                        if (_ftpc.ClientCertificates.Count <= 0 && x.PolicyErrors != SslPolicyErrors.None)
+                        {
+                            _certificates.Add(x.Certificate);
+                            x.Accept = false;
+                            return;
+                        }
+
+                        // if ValidateCertificate handler isn't set, accept the certificate and move on
+                        if (ValidateCertificate == null || Settings.TrustedCertificates.Contains(fingerPrint))
+                        {
+                            Log.Write(l.Client, "Trusted: {0}", fingerPrint);
+                            x.Accept = true;
+                            return;
+                        }
+
+                        var e = new ValidateCertificateEventArgs
+                        {
+                            Fingerprint = fingerPrint,
+                            SerialNumber = x.Certificate.GetSerialNumberString(),
+                            Algorithm = x.Certificate.GetKeyAlgorithmParametersString(),
+                            ValidFrom = x.Certificate.GetEffectiveDateString(),
+                            ValidTo = x.Certificate.GetExpirationDateString(),
+                            Issuer = x.Certificate.Issuer
+                        };
+                        // Prompt user to validate
+                        ValidateCertificate(null, e);
+                        x.Accept = e.IsTrusted;
+                    };
+
+                    // Change Security Protocol
+                    if (_controller.Account.FtpsMethod == FtpsMethod.Explicit)
+                        _ftpc.EncryptionMode = FtpEncryptionMode.Explicit;
+                    else if (_controller.Account.FtpsMethod == FtpsMethod.Implicit)
+                        _ftpc.EncryptionMode = FtpEncryptionMode.Implicit;
+                }
+
+                _ftpc.Credentials = new NetworkCredential(_controller.Account.Username, _controller.Account.Password);
+
+                try
+                {
+                    _ftpc.Connect();
+                }
+                catch (Exception exc)
+                {
+                    // Since the ClientCertificates are added when accepted in ValidateCertificate, the first 
+                    // attempt to connect will fail with an AuthenticationException. If this is the case, a 
+                    // re-connect is attempted, this time with the certificates properly set.
+                    // This is a workaround to avoid storing Certificate files locally...
+                    if (exc is AuthenticationException
+                        && _ftpc.ClientCertificates.Count <= 0)
+                        Connect();
+                    else
+                        throw;
+                }
+            }
+            else // SFTP
+            {
+                ConnectionInfo connectionInfo;
+                if (_controller.IsPrivateKeyValid)
+                    connectionInfo = new PrivateKeyConnectionInfo(_controller.Account.Host, _controller.Account.Port,
+                        _controller.Account.Username,
+                        new PrivateKeyFile(_controller.Account.PrivateKeyFile, _controller.Account.Password));
+                else
+                    connectionInfo = new PasswordConnectionInfo(_controller.Account.Host, _controller.Account.Port,
+                        _controller.Account.Username, _controller.Account.Password);
+
+                _sftpc = new SftpClient(connectionInfo);
+                _sftpc.ConnectionInfo.AuthenticationBanner += (o, x) => Log.Write(l.Warning, x.BannerMessage);
+
+                _sftpc.HostKeyReceived += (o, x) =>
+                {
+                    var fingerPrint = x.FingerPrint.GetCertificateData();
+
+                    // if ValidateCertificate handler isn't set, accept the certificate and move on
+                    if (ValidateCertificate == null || Settings.TrustedCertificates.Contains(fingerPrint))
+                    {
+                        Log.Write(l.Client, "Trusted: {0}", fingerPrint);
+                        x.CanTrust = true;
+                        return;
+                    }
+
+                    var e = new ValidateCertificateEventArgs
+                    {
+                        Fingerprint = fingerPrint,
+                        Key = x.HostKeyName,
+                        KeySize = x.KeyLength.ToString()
+                    };
+                    // Prompt user to validate
+                    ValidateCertificate(null, e);
+                    x.CanTrust = e.IsTrusted;
+                };
+
+                _sftpc.Connect();
+
+                _sftpc.ErrorOccurred += (o, e) =>
+                {
+                    if (!isConnected) Notifications.ChangeTrayText(MessageType.Nothing);
+                    if (ConnectionClosed != null)
+                        ConnectionClosed(null, new ConnectionClosedEventArgs {Text = e.Exception.Message});
+
+                    if (e.Exception is SftpPermissionDeniedException)
+                        Log.Write(l.Warning, "Permission denied error occured");
+                    if (e.Exception is SshConnectionException)
+                        Reconnect();
+                };
+            }
+
+            _controller.HomePath = WorkingDirectory;
+
+            if (isConnected)
+                if (!string.IsNullOrWhiteSpace(_controller.Paths.Remote) && !_controller.Paths.Remote.Equals("/"))
+                    WorkingDirectory = _controller.Paths.Remote;
+
+            Log.Write(l.Debug, "Client connected sucessfully");
+            Notifications.ChangeTrayText(MessageType.Ready);
+
+            if (Settings.IsDebugMode)
+                LogServerInfo();
+
+            // Periodically send NOOP (KeepAlive) to server if a non-zero interval is set            
+            SetKeepAlive();
+        }
 
         /// <summary>
         ///     Attempt to reconnect to the server. Called when connection has closed.
         /// </summary>
-        public async Task Reconnect()
+        public void Reconnect()
         {
             if (_reconnecting) return;
             try
             {
                 _reconnecting = true;
-                await Connect();
+                Connect();
             }
             catch (Exception ex)
             {
-                ex.LogException();
+                Common.LogError(ex);
                 Notifications.ChangeTrayText(MessageType.Disconnected);
                 ReconnectingFailed.SafeInvoke(null, EventArgs.Empty);
             }
@@ -85,109 +236,38 @@ namespace FTPboxLib
             }
         }
 
-        public abstract Task Download(string path, string localPath);
-
-        public abstract Task Download(SyncQueueItem i, Stream fileStream, IProgress<TransferProgress> progress);
-
-        public abstract Task Upload(string localPath, string path);
-
-        public abstract Task Upload(SyncQueueItem i, Stream uploadStream, string path, IProgress<TransferProgress> progress);
-
         /// <summary>
-        ///     Download to a temporary file.
-        ///     If the transfer is successful, replace the old file with the temporary one.
-        ///     If not, delete the temporary file.
+        ///     Close connection to server
         /// </summary>
-        /// <param name="i">The item to download</param>
-        /// <returns>TransferStatus.Success on success, TransferStatus.Success on failure</returns>
-        public async Task<TransferStatus> SafeDownload(SyncQueueItem i)
+        public void Disconnect()
         {
-            Notifications.ChangeTrayText(MessageType.Downloading, i.Item.Name);
-            var temp = Path.GetTempFileName();
-
-            try
-            {
-                // download to a temp file...
-                using (var file = File.OpenWrite(temp))
-                {
-                    await Download(i, file, TransferProgress);
-                }
-
-                if (Controller.TransferValidator.Validate(temp, i.Item))
-                {
-                    Controller.FolderWatcher.Pause();
-                    Common.RecycleOrDeleteFile(i.LocalPath);
-
-                    File.Move(temp, i.LocalPath);
-                    Controller.FolderWatcher.Resume();
-                    return TransferStatus.Success;
-                }
-            }
-            catch (Exception ex)
-            {
-                ex.LogException();
-                CheckWorkingDirectory();
-            }
-
-            Common.RecycleOrDeleteFile(i.LocalPath);
-
-            return TransferStatus.Failure;
-        }
-
-        public async Task<TransferStatus> SafeUpload(SyncQueueItem i)
-        {
-            // is this the first time we check the files?
-            // TODO: this only works for top level files rn
-            if (Controller.FileLog.IsEmpty())
-            {
-                // TODO: allow user to select if the following should happen
-                // skip synchronization if the file already exists and has the exact same size
-                if (Exists(i.CommonPath) && SizeOf(i.CommonPath) == i.Item.Size)
-                {
-                    Log.Write(l.Client, "File seems to be already synced (skipping): {0}", i.CommonPath);
-                    return TransferStatus.Success;
-                }
-            }
-
-            Notifications.ChangeTrayText(MessageType.Uploading, i.Item.Name);
-            var temp = Common._tempName(i.CommonPath, Controller.Account.TempFilePrefix);
-
-            try
-            {
-                // upload to a temp file...
-                using (var file = new FileStream(i.LocalPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
-                {
-                    await Upload(i, file, temp, TransferProgress);
-                }
-            }
-            catch (Exception ex)
-            {
-                ex.LogException();
-                CheckWorkingDirectory();
-                return TransferStatus.Failure;
-            }
-
-            if (Controller.TransferValidator.Validate(i.Item, temp))
-            {
-                if (Exists(i.CommonPath))
-                {
-                    Log.Write(l.Debug, $"Replacing remote file: [{i.CommonPath}]");
-                    await Remove(i.CommonPath);
-                }
-
-                await Rename(temp, i.CommonPath);
-
-                return TransferStatus.Success;
-            }
-
-            await Remove(temp);
-            return TransferStatus.Failure;
+            if (FTP)
+                _ftpc.Disconnect();
+            else
+                _sftpc.Disconnect();
         }
 
         /// <summary>
         ///     Keep the connection to the server alive by sending the NOOP command
         /// </summary>
-        public abstract Task SendKeepAlive();
+        private void SendNoOp()
+        {
+            if (_controller.SyncQueue.Running) return;
+
+            try
+            {
+                Console.WriteLine("NOOP");
+                if (FTP)
+                    _ftpc.Execute("NOOP");
+                else
+                    _sftpc.SendKeepAlive();
+            }
+            catch (Exception ex)
+            {
+                Common.LogError(ex);
+                Reconnect();
+            }
+        }
 
         /// <summary>
         ///     Set a timer that will periodically send the NOOP
@@ -198,10 +278,10 @@ namespace FTPboxLib
             // Dispose the existing timer
             UnsetKeepAlive();
 
-            if (_tKeepAlive == null) _tKeepAlive = new Timer(async state => await SendKeepAlive());
+            if (_tKeepAlive == null) _tKeepAlive = new Timer(state => SendNoOp());
 
-            if (Controller.Account.KeepAliveInterval > 0)
-                _tKeepAlive.Change(1000 * 10, 1000 * Controller.Account.KeepAliveInterval);
+            if (_controller.Account.KeepAliveInterval > 0)
+                _tKeepAlive.Change(1000*10, 1000*_controller.Account.KeepAliveInterval);
         }
 
         /// <summary>
@@ -209,243 +289,292 @@ namespace FTPboxLib
         /// </summary>
         public void UnsetKeepAlive()
         {
-            _tKeepAlive?.Change(0, 0);
+            if (_tKeepAlive != null) _tKeepAlive.Change(0, 0);
+        }
+
+        public void Upload(string localpath, string remotepath)
+        {
+            if (FTP)
+                using (Stream file = File.OpenRead(localpath),
+                    rem = _ftpc.OpenWrite(remotepath))
+                {
+                    var buf = new byte[8192];
+                    int read;
+                    long total = 0;
+
+
+                    while ((read = file.Read(buf, 0, buf.Length)) > 0)
+                    {
+                        rem.Write(buf, 0, read);
+                        total += read;
+
+                        Console.WriteLine("{0}/{1} {2:p}",
+                            total, file.Length,
+                            total/(double) file.Length);
+                    }
+                }
+            else
+                using (var file = File.OpenRead(localpath))
+                    _sftpc.UploadFile(file, remotepath, true);
         }
 
         /// <summary>
-        ///     Rename a remote file or folder
+        ///     Upload to a temporary file.
+        ///     If the transfer is successful, replace the old file with the temporary one.
+        ///     If not, delete the temporary file.
         /// </summary>
-        /// <param name="oldname">The path to the old file or folder</param>
-        /// <param name="newname">The path to the new file or folder</param>
-        public abstract Task Rename(string oldname, string newname);
-
-        /// <summary>
-        ///     Creates a new directory
-        /// </summary>
-        /// <param name="path">Path to the directory</param>
-        protected abstract Task CreateDirectory(string path);
-
-        /// <summary>
-        ///     Attempts to create the specified directory
-        /// </summary>
-        /// <param name="path">Path to the directory</param>
-        public async Task MakeFolder(string path)
+        /// <param name="i">The item to upload</param>
+        /// <returns>TransferStatus.Success on success, TransferStatus.Success on failure</returns>
+        public TransferStatus SafeUpload(SyncQueueItem i)
         {
+            // is this the first time we check the files?
+            //if (_controller.FileLog.IsEmpty())
+            //{
+                //TODO: allow user to select if the following should happen
+                // skip synchronization if the file already exists and has the exact same size
+                if (Exists(i.CommonPath) && SizeOf(i.CommonPath) == i.Item.Size)
+                {
+                    Log.Write(l.Client, "File seems to be already synced (skipping): {0}", i.CommonPath);
+                    return TransferStatus.Success;
+                }
+            //}
+
+            Notifications.ChangeTrayText(MessageType.Uploading, i.Item.Name);
+            var temp = Common._tempName(i.CommonPath, _controller.Account.TempFilePrefix);
+
             try
             {
-                await CreateDirectory(path);
+                var startedOn = DateTime.Now;
+                long transfered = 0;
+                // upload to a temp file...
+                if (FTP)
+                {
+                    using (
+                        Stream file = File.Open(i.LocalPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite),
+                            rem = _ftpc.OpenWrite(temp))
+                    {
+                        var buf = new byte[8192];
+                        int read;
+
+                        while ((read = file.Read(buf, 0, buf.Length)) > 0)
+                        {
+                            rem.Write(buf, 0, read);
+                            transfered += read;
+
+                            ReportTransferProgress(new TransferProgressArgs(read, transfered, i, startedOn));
+
+                            ThrottleTransfer(Settings.General.UploadLimit, transfered, startedOn);
+                        }
+                    }
+                }
+                else
+                    using (var file = File.Open(i.LocalPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+                        _sftpc.UploadFile(file, temp, true,
+                            d =>
+                            {
+                                ReportTransferProgress(new TransferProgressArgs((long) d - transfered, (long) d, i,
+                                    startedOn));
+                                transfered = (long) d;
+                            });
             }
             catch (Exception ex)
             {
-                ex.LogException();
-                if (!Exists(path)) throw;
+                Common.LogError(ex);
+                if (FTP) CheckWorkingDirectory();
+                return TransferStatus.Failure;
+            }
+
+            if (FTP) CheckWorkingDirectory();
+
+            Thread.Sleep(2000); //wait syncing
+
+            long size = SizeOf(temp);
+
+            if (i.Item.Size == size)
+            {
+                if (Exists(i.CommonPath)) Remove(i.CommonPath);
+                Rename(temp, i.CommonPath);
+
+                return TransferStatus.Success;
+            }
+            Remove(temp);
+            return TransferStatus.Failure;
+        }
+
+        public void Download(string cpath, string lpath)
+        {
+            if (FTP)
+            {
+                using (Stream file = File.OpenWrite(lpath), rem = _ftpc.OpenRead(cpath))
+                {
+                    var buf = new byte[8192];
+                    int read;
+
+                    while ((read = rem.Read(buf, 0, buf.Length)) > 0)
+                        file.Write(buf, 0, read);
+                }
+            }
+            else
+                using (var f = new FileStream(lpath, FileMode.Create, FileAccess.ReadWrite))
+                    _sftpc.DownloadFile(cpath, f);
+        }
+
+        /// <summary>
+        ///     Download to a temporary file.
+        ///     If the transfer is successful, replace the old file with the temporary one.
+        ///     If not, delete the temporary file.
+        /// </summary>
+        /// <param name="i">The item to download</param>
+        /// <returns>TransferStatus.Success on success, TransferStatus.Success on failure</returns>
+        public TransferStatus SafeDownload(SyncQueueItem i)
+        {
+            Notifications.ChangeTrayText(MessageType.Downloading, i.Item.Name);
+            var temp = Common._tempLocal(i.LocalPath, _controller.Account.TempFilePrefix);
+            try
+            {
+                var startedOn = DateTime.Now;
+                long transfered = 0;
+                // download to a temp file...
+                if (FTP)
+                {
+                    using (Stream file = File.OpenWrite(temp), rem = _ftpc.OpenRead(i.CommonPath))
+                    {
+                        var buf = new byte[8192];
+                        int read;
+
+                        while ((read = rem.Read(buf, 0, buf.Length)) > 0)
+                        {
+                            file.Write(buf, 0, read);
+                            transfered += read;
+
+                            ReportTransferProgress(new TransferProgressArgs(read, transfered, i, startedOn));
+
+                            ThrottleTransfer(Settings.General.DownloadLimit, transfered, startedOn);
+                        }
+                    }
+                }
+                else
+                    using (var f = new FileStream(temp, FileMode.Create, FileAccess.ReadWrite))
+                        _sftpc.DownloadFile(i.CommonPath, f,
+                            d =>
+                            {
+                                ReportTransferProgress(new TransferProgressArgs((long) d - transfered, (long) d, i,
+                                    startedOn));
+                                transfered = (long) d;
+                            });
+            }
+            catch (Exception ex)
+            {
+                Common.LogError(ex);
+                if (FTP) CheckWorkingDirectory();
+                goto Finish;
+            }
+
+            if (i.Item.Size == new FileInfo(temp).Length)
+            {
+                _controller.FolderWatcher.Pause(); // Pause Watchers
+                if (File.Exists(i.LocalPath))
+#if __MonoCs__
+                    File.Delete(i.LocalPath);
+                    #else
+                    FileIO.FileSystem.DeleteFile(i.LocalPath, FileIO.UIOption.OnlyErrorDialogs,
+                        FileIO.RecycleOption.SendToRecycleBin);
+#endif
+                File.Move(temp, i.LocalPath);
+                _controller.FolderWatcher.Resume(); // Resume Watchers
+                return TransferStatus.Success;
+            }
+
+            Finish:
+            if (File.Exists(temp))
+#if __MonoCs__
+                File.Delete(temp);
+                #else
+                FileIO.FileSystem.DeleteFile(temp, FileIO.UIOption.OnlyErrorDialogs,
+                    FileIO.RecycleOption.SendToRecycleBin);
+#endif
+            return TransferStatus.Failure;
+        }
+
+        public void Rename(string oldname, string newname)
+        {
+            if (FTP) CheckWorkingDirectory();
+
+            if (FTP)
+                _ftpc.Rename(oldname, newname);
+            else
+                _sftpc.RenameFile(oldname, newname);
+        }
+
+        public void MakeFolder(string cpath)
+        {
+            try
+            {
+                if (FTP)
+                    _ftpc.CreateDirectory(cpath);
+                else
+                    _sftpc.CreateDirectory(cpath);
+            }
+            catch
+            {
+                if (!Exists(cpath)) throw;
             }
         }
 
         /// <summary>
-        ///     Delete a file or folder
+        ///     Delete a file
         /// </summary>
-        /// <param name="cpath">Path to the file or folder to delete</param>
-        /// <param name="isFolder">If set to <c>true</c>c> the path will be treated as a folder</param>
-        public abstract Task Remove(string cpath, bool isFolder = false);
+        /// <param name="cpath">Path to the file</param>
+        public void Remove(string cpath)
+        {
+            if (FTP) CheckWorkingDirectory();
+
+            if (FTP)
+            {try
+                {
+                    _ftpc.DeleteFile(cpath);
+                } catch (Exception) { }
+            }
+            else
+                _sftpc.Delete(cpath);
+        }
 
         /// <summary>
         ///     Delete a remote folder and everything inside it
         /// </summary>
         /// <param name="path">Path to folder that will be deleted</param>
         /// <param name="skipIgnored">if true, files that are normally ignored will not be deleted</param>
-        public virtual async Task RemoveFolder(string path, bool skipIgnored = true)
+        public void RemoveFolder(string path, bool skipIgnored = true)
         {
+            if (FTP) CheckWorkingDirectory();
+
             if (!Exists(path)) return;
 
             Log.Write(l.Client, "About to delete: {0}", path);
             // Empty the folder before deleting it
             // List is reversed to delete an files before their parent folders
-            foreach (var i in (await ListRecursive(path, skipIgnored)).Reverse())
+            foreach (var i in ListRecursive(path, skipIgnored).Reverse())
             {
                 Console.Write("\r Removing: {0,50}", i.FullPath);
                 if (i.Type == ClientItemType.File)
-                {
-                    await Remove(i.FullPath);
-                }
+                    Remove(i.FullPath);
                 else
                 {
-                    await Remove(i.FullPath, true);
+                    if (FTP)
+                        _ftpc.DeleteDirectory(i.FullPath);
+                    else
+                        _sftpc.DeleteDirectory(i.FullPath);
                 }
             }
 
-            await Remove(path, true);
+            if (FTP) CheckWorkingDirectory();
+
+            if (FTP)
+                _ftpc.DeleteDirectory(path);
+            else
+                _sftpc.DeleteDirectory(path);
 
             Log.Write(l.Client, "Deleted: {0}", path);
-        }
-
-        /// <summary>
-        ///     Displays some server info in the log/console
-        /// </summary>
-        protected abstract void LogServerInfo();
-
-        /// <summary>
-        ///     Change the permissions of the specified file
-        /// </summary>
-        /// <param name="i">The item to change the permissions of</param>
-        /// <param name="mode">The new permissions in numeric notation</param>
-        public abstract void SetFilePermissions(SyncQueueItem i, short mode);
-
-        /// <summary>
-        ///     Get the Last Modified Time of an item
-        /// </summary>
-        /// <param name="path">The path to the item</param>
-        public abstract DateTime GetModifiedTime(string path);
-
-        /// <summary>
-        ///     Attempt to get the Last Modified Time of the specified file/folder
-        /// </summary>
-        /// <param name="path">The common path to the file/folder</param>
-        /// <returns>The item's modified time on success, DateTime.MinValue on failure</returns>
-        public DateTime TryGetModifiedTime(string path)
-        {
-            if (string.IsNullOrWhiteSpace(path)) return DateTime.MinValue;
-
-            if (path.StartsWith("/")) path = path.Substring(1);
-            var dt = DateTime.MinValue;
-
-            try
-            {
-                dt = GetModifiedTime(path);
-            }
-            catch (Exception ex)
-            {
-                Log.Write(l.Warning, $"Path is probably a folder: {path}");
-                ex.LogException();
-            }
-
-            return dt;
-        }
-
-        /// <summary>
-        ///     Set the Last Modified Time of an item
-        /// </summary>
-        /// <param name="i">The item</param>
-        /// <param name="time">The new Last Modified Time</param>
-        public abstract void SetModifiedTime(SyncQueueItem i, DateTime time);
-
-        /// <summary>
-        ///     Set the Creation Time of an item
-        /// </summary>
-        /// <param name="i">The item</param>
-        /// <param name="time">The new Creation Time</param>
-        public abstract void SetCreationTime(SyncQueueItem i, DateTime time);
-
-        /// <summary>
-        ///     Returns the file size of the file in the given bath, in both SFTP and FTP
-        /// </summary>
-        /// <param name="path">The path to the file</param>
-        /// <returns>The file's size</returns>
-        public abstract long SizeOf(string path);
-
-        /// <summary>
-        ///     Find if a path exists on the server
-        /// </summary>
-        /// <param name="cpath">Path to a file or folder</param>
-        /// <returns><c>true</c> if the specified path exists</returns>
-        public abstract bool Exists(string cpath);
-
-        /// <summary>
-        ///     Retrieve a file listing inside the specified directory
-        /// </summary>
-        /// <param name="path">The directory to list inside</param>
-        /// <returns></returns>
-        public abstract Task<IEnumerable<ClientItem>> GetFileListing(string path);
-
-        /// <summary>
-        ///     Returns a non-recursive list of files/folders inside the specified path
-        /// </summary>
-        /// <param name="cpath">path to folder to list inside</param>
-        /// <param name="skipIgnored">if true, ignored items are not returned</param>
-        public virtual async Task<IEnumerable<ClientItem>> List(string cpath, bool skipIgnored = true)
-        {
-            ListingFailed = false;
-            UnsetKeepAlive();
-
-            try
-            {
-                var list = await GetFileListing(cpath);
-                return list
-                    .Where(x => x.Type != ClientItemType.Other)
-                    .Where(x => !skipIgnored || (skipIgnored && !x.FullPath.Contains("webint")))
-                    .Where(x => x.Name != "." && x.Name != "..");
-            }
-            catch (PermissionDeniedException)
-            {
-                Log.Write(l.Warning, $"Denied permission to list files inside directory: {cpath}");
-                return new List<ClientItem>();
-            }
-            catch (Exception ex)
-            {
-                ex.LogException();
-                ListingFailed = true;
-                return new List<ClientItem>();
-            }
-
-            //SetKeepAlive();
-        }
-
-        /// <summary>
-        ///     Get a full list of files/folders inside the specified path
-        /// </summary>
-        /// <param name="cpath">path to folder to list inside</param>
-        /// <param name="skipIgnored">if true, ignored items are not returned</param>
-        public virtual async Task<IEnumerable<ClientItem>> ListRecursive(string cpath, bool skipIgnored = true)
-        {
-            var list = await List(cpath, skipIgnored);
-
-            if (ListingFailed) return default(IEnumerable<ClientItem>);
-
-            if (skipIgnored)
-                list = list.Where(x => !Controller.ItemSkipped(x));
-
-            var subItems = list.Where(x => x.Type == ClientItemType.File).ToList();
-
-            foreach (var d in list.Where(x => x.Type == ClientItemType.Folder))
-            {
-                subItems.Add(d);
-                foreach (var f in await ListRecursiveInside(d, skipIgnored))
-                {
-                    subItems.Add(f);
-                }
-            }
-
-            return subItems;
-        }
-
-        /// <summary>
-        ///     Returns a fully recursive listing inside the specified (directory) item
-        /// </summary>
-        /// <param name="p">The clientItem (should be of type directory) to list inside</param>
-        /// <param name="skipIgnored">if true, ignored items are not returned</param>
-        private async Task<IEnumerable<ClientItem>> ListRecursiveInside(ClientItem p, bool skipIgnored = true)
-        {
-            var cpath = Controller.GetCommonPath(p.FullPath, false);
-
-            var list = await List(cpath, skipIgnored);
-
-            if (ListingFailed) return default(IEnumerable<ClientItem>);
-
-            if (skipIgnored)
-                list = list.Where(x => !Controller.ItemSkipped(x));
-            
-            var subItems = list.Where(x => x.Type == ClientItemType.File).ToList();
-
-            foreach (var d in list.Where(x => x.Type == ClientItemType.Folder))
-            {
-                subItems.Add(d);
-                foreach (var f in await ListRecursiveInside(d, skipIgnored))
-                {
-                    subItems.Add(f);
-                }
-            }
-
-            return subItems;
         }
 
         /// <summary>
@@ -459,24 +588,19 @@ namespace FTPboxLib
             try
             {
                 var cd = WorkingDirectory;
-                if (cd != Controller.Paths.Remote)
+                if (cd != _controller.Paths.Remote)
                 {
-                    Log.Write(l.Warning, "pwd is: {0} should be: {1}", cd, Controller.Paths.Remote);
-                    WorkingDirectory = Controller.Paths.Remote;
+                    Log.Write(l.Warning, "pwd is: {0} should be: {1}", cd, _controller.Paths.Remote);
+                    WorkingDirectory = _controller.Paths.Remote;
                 }
                 return true;
             }
             catch (Exception ex)
             {
-                if (!IsConnected) Log.Write(l.Warning, "Client not connected!");
-                ex.LogException();
+                if (!isConnected) Log.Write(l.Warning, "Client not connected!");
+                Common.LogError(ex);
                 return false;
             }
-        }
-
-        protected void OnConnectionClosed(ConnectionClosedEventArgs e)
-        {
-            ConnectionClosed?.Invoke(null, e);
         }
 
         /// <summary>
@@ -485,20 +609,290 @@ namespace FTPboxLib
         /// <param name="limit">The download or upload rate to limit to, in kB/s.</param>
         /// <param name="transfered">bytes already transferred.</param>
         /// <param name="startedOn">when did the transfer start.</param>
-        protected void ThrottleTransfer(int limit, long transfered, DateTime startedOn)
+        private void ThrottleTransfer(int limit, long transfered, DateTime startedOn)
         {
             var elapsed = DateTime.Now.Subtract(startedOn);
-            var rate = (int)(elapsed.TotalSeconds < 1 ? transfered : transfered / elapsed.TotalSeconds);
-            if (limit > 0 && rate > 1000 * limit)
+            var rate = (int) (elapsed.TotalSeconds < 1 ? transfered : transfered/elapsed.TotalSeconds);
+            if (limit > 0 && rate > 1000*limit)
             {
-                long millisecDelay = (transfered / limit - elapsed.Milliseconds);
+                double millisecDelay = (transfered/limit - elapsed.Milliseconds);
 
-                if (millisecDelay > int.MaxValue)
-                    millisecDelay = int.MaxValue;
+                if (millisecDelay > Int32.MaxValue)
+                    millisecDelay = Int32.MaxValue;
 
-                Thread.Sleep((int)millisecDelay);
+                Thread.Sleep((int) millisecDelay);
             }
         }
+
+        /// <summary>
+        ///     Displays some server info in the log/console
+        /// </summary>
+        public void LogServerInfo()
+        {
+            Log.Write(l.Client, "////////////////////Server Info///////////////////");
+            if (!FTP)
+            {
+                Log.Write(l.Client, "Protocol Version: {0}", _sftpc.ProtocolVersion);
+                Log.Write(l.Client, "Client Compression Algorithm: {0}",
+                    _sftpc.ConnectionInfo.CurrentClientCompressionAlgorithm);
+                Log.Write(l.Client, "Server Compression Algorithm: {0}",
+                    _sftpc.ConnectionInfo.CurrentServerCompressionAlgorithm);
+                Log.Write(l.Client, "Client encryption: {0}", _sftpc.ConnectionInfo.CurrentClientEncryption);
+                Log.Write(l.Client, "Server encryption: {0}", _sftpc.ConnectionInfo.CurrentServerEncryption);
+            }
+            else
+            {
+                Log.Write(l.Client, "System type: {0}", _ftpc.SystemType);
+                Log.Write(l.Client, "Encryption Mode: {0}", _ftpc.EncryptionMode);
+                Log.Write(l.Client, "Character Encoding: {0}", _ftpc.Encoding);
+            }
+
+            Log.Write(l.Client, "//////////////////////////////////////////////////");
+        }
+
+        /// <summary>
+        ///     Safely invoke TransferProgress.
+        /// </summary>
+        private void ReportTransferProgress(TransferProgressArgs e)
+        {
+            if (TransferProgress != null)
+                TransferProgress(null, e);
+        }
+
+        /// <summary>
+        ///     Returns the file size of the file in the given bath, in both SFTP and FTP
+        /// </summary>
+        /// <param name="path">The path to the file</param>
+        /// <returns>The file's size</returns>
+        public long SizeOf(string path)
+        {
+            if (FTP) CheckWorkingDirectory();
+
+            return (FTP) ? _ftpc.GetFileSize(path) : _sftpc.GetAttributes(path).Size;
+        }
+
+        /// <summary>
+        ///     Does the specified path exist on the remote folder?
+        /// </summary>
+        public bool Exists(string cpath)
+        {
+            if (FTP) CheckWorkingDirectory();
+
+            if (FTP)
+                return _ftpc.FileExists(cpath) || _ftpc.DirectoryExists(cpath);
+            return _sftpc.Exists(cpath);
+        }
+
+        /// <summary>
+        ///     Returns the LastWriteTime of the specified file/folder
+        /// </summary>
+        /// <param name="path">The common path to the file/folder</param>
+        /// <returns></returns>
+        public DateTime GetLwtOf(string path)
+        {
+            if (string.IsNullOrWhiteSpace(path)) return DateTime.MinValue;
+
+            if (path.StartsWith("/")) path = path.Substring(1);
+            var dt = DateTime.MinValue;
+
+            try
+            {
+                dt = (FTP) ? _ftpc.GetModifiedTime(path) : _sftpc.GetLastWriteTime(path);
+            }
+            catch (Exception ex)
+            {
+                Log.Write(l.Client, "===> {0} is a folder", path);
+                Common.LogError(ex);
+            }
+
+            if (!FTP)
+                Log.Write(l.Client, "Got LWT: {0} UTC: {1}", dt, _sftpc.GetLastAccessTimeUtc(path));
+
+            return dt;
+        }
+
+        /// <summary>
+        ///     Convert SftpFile to ClientItemType
+        /// </summary>
+        private ClientItemType _ItemTypeOf(SftpFile f)
+        {
+            if (f.IsDirectory)
+                return ClientItemType.Folder;
+            if (f.IsRegularFile)
+                return ClientItemType.File;
+            return ClientItemType.Other;
+        }
+
+        /// <summary>
+        ///     Convert FtpFileSystemObjectType to ClientItemType
+        /// </summary>
+        private ClientItemType _ItemTypeOf(FtpFileSystemObjectType f)
+        {
+            if (f == FtpFileSystemObjectType.File)
+                return ClientItemType.File;
+            if (f == FtpFileSystemObjectType.Directory)
+                return ClientItemType.Folder;
+            return ClientItemType.Other;
+        }
+
+        #endregion
+
+        #region Properties
+
+        private bool FTP
+        {
+            get { return (_controller.Account.Protocol != FtpProtocol.SFTP); }
+        }
+
+        public bool isConnected
+        {
+            get { return (FTP) ? _ftpc.IsConnected : _sftpc.IsConnected; }
+        }
+
+        public bool ListingFailed { get; private set; }
+
+        public string WorkingDirectory
+        {
+            get { return (FTP) ? _ftpc.GetWorkingDirectory() : _sftpc.WorkingDirectory; }
+            set
+            {
+                if (FTP)
+                    _ftpc.SetWorkingDirectory(value);
+                else
+                    _sftpc.ChangeDirectory(value);
+                Log.Write(l.Client, "cd {0}", value);
+            }
+        }
+
+        #endregion
+
+        #region Listing
+
+        /// <summary>
+        ///     Returns a non-recursive list of files/folders inside the specified path
+        /// </summary>
+        /// <param name="cpath">path to folder to list inside</param>
+        /// <param name="skipIgnored">if true, ignored items are not returned</param>
+        public IEnumerable<ClientItem> List(string cpath, bool skipIgnored = true)
+        {
+            ListingFailed = false;
+            UnsetKeepAlive();
+
+            List<ClientItem> list;
+
+            try
+            {
+                list = FTP
+                    ? Array.ConvertAll(new List<FtpListItem>(_ftpc.GetListing(cpath)).ToArray(), ConvertItem).ToList()
+                    : Array.ConvertAll(new List<SftpFile>(_sftpc.ListDirectory(cpath)).ToArray(), ConvertItem).ToList();
+            }
+            catch (Exception ex)
+            {
+                Common.LogError(ex);
+                ListingFailed = true;
+                yield break;
+            }
+
+            list.RemoveAll(x => x.Name == "." || x.Name == "..");
+            if (skipIgnored)
+                list.RemoveAll(x => x.FullPath.Contains("webint"));
+
+            foreach (var f in list.Where(x => x.Type != ClientItemType.Other))
+                yield return f;
+
+            SetKeepAlive();
+        }
+
+        /// <summary>
+        ///     Get a full list of files/folders inside the specified path
+        /// </summary>
+        /// <param name="cpath">path to folder to list inside</param>
+        /// <param name="skipIgnored">if true, ignored items are not returned</param>
+        public IEnumerable<ClientItem> ListRecursive(string cpath, bool skipIgnored = true)
+        {
+            var list = new List<ClientItem>(List(cpath, skipIgnored).ToList());
+            if (ListingFailed) yield break;
+
+            if (skipIgnored)
+                list.RemoveAll(x => !_controller.ItemGetsSynced(x.FullPath, false));
+
+            foreach (var f in list.Where(x => x.Type == ClientItemType.File))
+                yield return f;
+
+            foreach (var d in list.Where(x => x.Type == ClientItemType.Folder))
+                foreach (var f in ListRecursiveInside(d, skipIgnored))
+                    yield return f;
+        }
+
+        /// <summary>
+        ///     Returns a fully recursive listing inside the specified (directory) item
+        /// </summary>
+        /// <param name="p">The clientItem (should be of type directory) to list inside</param>
+        /// <param name="skipIgnored">if true, ignored items are not returned</param>
+        private IEnumerable<ClientItem> ListRecursiveInside(ClientItem p, bool skipIgnored = true)
+        {
+            yield return p;
+
+            var cpath = _controller.GetCommonPath(p.FullPath, false);
+
+            var list = new List<ClientItem>(List(cpath, skipIgnored).ToList());
+            if (ListingFailed) yield break;
+
+            if (skipIgnored)
+                list.RemoveAll(x => !_controller.ItemGetsSynced(x.FullPath, false));
+
+            foreach (var f in list.Where(x => x.Type == ClientItemType.File))
+                yield return f;
+
+            foreach (var d in list.Where(x => x.Type == ClientItemType.Folder))
+                foreach (var f in ListRecursiveInside(d, skipIgnored))
+                    yield return f;
+        }
+
+        /// <summary>
+        ///     Convert an FtpItem to a ClientItem
+        /// </summary>
+        private ClientItem ConvertItem(FtpListItem f)
+        {
+            var fullPath = f.FullName;
+            if (fullPath.StartsWith("./"))
+            {
+                var cwd = WorkingDirectory;
+                var wd = (_controller.Paths.Remote != null && cwd.StartsWithButNotEqual(_controller.Paths.Remote) &&
+                          cwd != "/")
+                    ? cwd
+                    : _controller.GetCommonPath(cwd, false);
+                fullPath = fullPath.Substring(2);
+                if (wd != "/")
+                    fullPath = string.Format("/{0}/{1}", wd, fullPath);
+                fullPath = fullPath.Replace("//", "/");
+            }
+
+            return new ClientItem
+            {
+                Name = f.Name,
+                FullPath = fullPath,
+                Type = _ItemTypeOf(f.Type),
+                Size = f.Size,
+                LastWriteTime = f.Modified
+            };
+        }
+
+        /// <summary>
+        ///     Convert an SftpFile to a ClientItem
+        /// </summary>
+        private ClientItem ConvertItem(SftpFile f)
+        {
+            return new ClientItem
+            {
+                Name = f.Name,
+                FullPath = _controller.GetCommonPath(f.FullName, false),
+                Type = _ItemTypeOf(f),
+                Size = f.Attributes.Size,
+                LastWriteTime = f.LastWriteTime
+            };
+        }
+
+        #endregion
     }
 }
-    

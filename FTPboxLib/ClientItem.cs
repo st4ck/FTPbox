@@ -11,7 +11,6 @@
  */
 
 using System;
-using System.IO;
 
 namespace FTPboxLib
 {
@@ -28,30 +27,6 @@ namespace FTPboxLib
             LastWriteTime = lastWriteTime;
         }
 
-        public ClientItem(FileInfo info)
-        {
-            Name = info.Name;
-            FullPath = info.FullName;
-            Type = ClientItemType.File;
-            LastWriteTime = info.LastWriteTime;
-            try
-            {
-                Size = info.Length;
-            }
-            catch
-            {
-                Size = -1;
-            }
-        }
-
-        public ClientItem(DirectoryInfo info)
-        {
-            Name = info.Name;
-            Type = ClientItemType.Folder;
-            LastWriteTime = DateTime.MinValue;  // Doesn't matter
-            Size = 0x0;                         // Doesn't matter
-        }
-
         #region Properties
 
         public string Name { get; set; }
@@ -64,11 +39,7 @@ namespace FTPboxLib
 
         public long Size { get; set; }
 
-        public DateTime CreationTime = default(DateTime);
-
         public DateTime LastWriteTime { get; set; }
-
-        public string Permissions { get; set; }
 
         #endregion
     }

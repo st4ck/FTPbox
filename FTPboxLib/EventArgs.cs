@@ -11,7 +11,6 @@
  */
 
 using System;
-using System.Security.Cryptography.X509Certificates;
 
 namespace FTPboxLib
 {
@@ -30,65 +29,76 @@ namespace FTPboxLib
         public string Key;
         public string KeySize;
         // FTPS info
-        public X509Certificate2 cert;
+        public string SerialNumber;
+        public string Algorithm;
+        public string Issuer;
+        public string ValidFrom;
+        public string ValidTo;
 
         // Trust the certificate?
         public bool IsTrusted;
-
-        public string ValidationMessage()
-        {
-            // Add certificate info
-            if (!string.IsNullOrEmpty(Key) && !string.IsNullOrEmpty(KeySize))
-            {
-                return $"{"Key:",-8}\t {Key}\n" +
-                       $"{"Key Size:",-8}\t {KeySize}\n" +
-                       $"{"Fingerprint: ",-8}\t {Fingerprint}\n\n" +
-                        "Trust this certificate and continue?";
-            }
-            else
-            {
-                var validFrom = cert.GetEffectiveDateString();
-                var validTo = cert.GetExpirationDateString();
-                var serialNumber = cert.GetSerialNumberString();
-                var algorithm = cert.SignatureAlgorithm.FriendlyName;
-                var publicKey = $"{cert.PublicKey.Oid.FriendlyName} with {cert.PublicKey.Key.KeySize} bits";
-                var issuer = cert.Issuer;
-                var fingerprint = cert.Thumbprint;
-
-                return $"{"Valid from:",-25}\t {validFrom}\n" +
-                       $"{"Valid to:",-25}\t {validTo}\n" +
-                       $"{"Serial number:",-25}\t {serialNumber}\n" +
-                       $"{"Public key:",-25}\t {publicKey}\n" +
-                       $"{"Algorithm:",-25}\t {algorithm}\n" +
-                       $"{"Issuer:",-25}\n {issuer}\n" +
-                       $"{"Fingerprint: ",-8}\t {fingerprint}\n\n" +
-                       "Trust this certificate and continue?";
-            }
-        }
     }
 
     // EventArgs for Notifications.cs
 
     public class NotificationArgs : EventArgs
     {
-        public NotificationArgs(string text, string title = null)
-        {
-            Title = title ?? "FTPbox";
-            Text = text;
-        }
-        public string Title = "FTPbox";        
+        public string Title = "FTPbox";
+
         public string Text;
     }
 
     public class TrayTextNotificationArgs : EventArgs
     {
-        public TrayTextNotificationArgs(MessageType type, string file = null)
-        {
-            MessageType = type;
-            AssossiatedFile = file;
-        }
         //TODO:  Fix that shit
         public MessageType MessageType;
         public string AssossiatedFile;
+    }
+
+    // EventArgs for transfer progress
+
+    public class TransferProgressArgs : EventArgs
+    {
+        /// <summary>
+        /// TransferProgressArgs constructor.
+        /// </summary>
+        /// <param name="transferred">bytes transferred</param>
+        /// <param name="total">total bytes transferred</param>
+        /// <param name="item">the transferred item</param>
+        /// <param name="started">when the transfer started</param>
+        public TransferProgressArgs(long transferred, long total, SyncQueueItem item, DateTime started)
+        {
+            Transfered = transferred;
+            TotalTransferred = total;
+            Item = item;
+            StartedOn = started;
+        }
+
+        // Bytes transferred
+        public long Transfered;
+        // Total bytes transferred
+        public long TotalTransferred;
+        // The item that is being transferred
+        public SyncQueueItem Item;
+        // Started on
+        public DateTime StartedOn;
+
+        // Total bytes to be transferred
+        public int Progress { get { return (int)(100 * TotalTransferred / Item.Item.Size); } }
+        // Transfer Rate
+        public string Rate
+        {
+            get
+            {
+                var elapsed = DateTime.Now.Subtract(StartedOn);
+                var rate = (int)(elapsed.TotalSeconds < 1 ? TotalTransferred : TotalTransferred / elapsed.TotalSeconds);
+                var f = rate <= 1024 ? "bytes" : "kb";
+                if (rate > 1024) rate /= 1024;
+
+                Console.Write("\r Transferred {0:p} bytes @ {1} {2}/s", TotalTransferred / (double)Item.Item.Size, rate, f);
+
+                return string.Format("{0} {1}/s", rate, f);
+            }
+        }
     }
 }

@@ -51,7 +51,7 @@ namespace Utilities.Encryption
             var plainTextBytes = Encoding.UTF8.GetBytes(plainText);
             var derivedPassword = new Rfc2898DeriveBytes(password, saltValueBytes, passwordIterations);
             var keyBytes = derivedPassword.GetBytes(keySize / 8);
-            var symmetricKey = new RijndaelManaged {Mode = CipherMode.CBC};
+            var symmetricKey = new RijndaelManaged { Mode = CipherMode.CBC };
             byte[] cipherTextBytes = null;
             using (var encryptor = symmetricKey.CreateEncryptor(keyBytes, initialVectorBytes))
             {
@@ -70,7 +70,7 @@ namespace Utilities.Encryption
             symmetricKey.Clear();
             return Convert.ToBase64String(cipherTextBytes);
         }
-   
+
         /// <summary>
         /// Decrypts a string
         /// </summary>
@@ -90,7 +90,7 @@ namespace Utilities.Encryption
             var cipherTextBytes = Convert.FromBase64String(cipherText);
             var derivedPassword = new Rfc2898DeriveBytes(password, saltValueBytes, passwordIterations);
             var keyBytes = derivedPassword.GetBytes(keySize / 8);
-            var symmetricKey = new RijndaelManaged {Mode = CipherMode.CBC};
+            var symmetricKey = new RijndaelManaged { Mode = CipherMode.CBC };
             var plainTextBytes = new byte[cipherTextBytes.Length];
             var byteCount = 0;
             using (var decryptor = symmetricKey.CreateDecryptor(keyBytes, initialVectorBytes))
@@ -99,7 +99,7 @@ namespace Utilities.Encryption
                 {
                     using (var cryptoStream = new CryptoStream(memStream, decryptor, CryptoStreamMode.Read))
                     {
-   
+
                         byteCount = cryptoStream.Read(plainTextBytes, 0, plainTextBytes.Length);
                         memStream.Close();
                         cryptoStream.Close();
@@ -110,4 +110,4 @@ namespace Utilities.Encryption
             return Encoding.UTF8.GetString(plainTextBytes, 0, byteCount);
         }
     }
- }
+}

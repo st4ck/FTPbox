@@ -38,6 +38,7 @@ namespace FTPboxLib
                 { "he", "Hebrew" }, { "sr", "Serbian" }, { "src", "Serbian, Cyrillic" }, { "eu", "Basque" }, { "ar", "Arabic" }, { "bg", "Bulgarian" }, { "id", "Indonesian" }
             }.OrderBy(x => x.Value).ToDictionary(x => x.Key, x => x.Value);
 
+
         #endregion
 
         #region Methods
@@ -192,32 +193,22 @@ namespace FTPboxLib
             return false;
         }
 
-        public static void RecycleOrDeleteFile(string path)
+        /// <summary>
+        /// displays details of the thrown exception in the console
+        /// </summary>
+        /// <param name="error"></param>
+        public static void LogError(Exception error)
         {
-            if (File.Exists(path))
-            {
-                #if __MonoCs__
-                File.Delete(path);
-                #else
-                Microsoft.VisualBasic.FileIO.FileSystem.DeleteFile(path,
-                    Microsoft.VisualBasic.FileIO.UIOption.OnlyErrorDialogs,
-                    Microsoft.VisualBasic.FileIO.RecycleOption.SendToRecycleBin);
-                #endif
-            }
-        }
-
-        public static void RecycleOrDeleteFolder(string path)
-        {
-            if (Directory.Exists(path))
-            {
-                #if __MonoCs__
-                Directory.Delete(path);
-                #else
-                Microsoft.VisualBasic.FileIO.FileSystem.DeleteDirectory(path,
-                    Microsoft.VisualBasic.FileIO.UIOption.OnlyErrorDialogs,
-                    Microsoft.VisualBasic.FileIO.RecycleOption.SendToRecycleBin);
-                #endif
-            }
+            Log.Write(l.Error, "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+            Log.Write(l.Error, "Message: {0}", error.Message);
+            Log.Write(l.Error, "--");
+            Log.Write(l.Error, "StackTrace: {0}", error.StackTrace);
+            Log.Write(l.Error, "--");
+            Log.Write(l.Error, "Source: {0} Type: {1}", error.Source, error.GetType().ToString());
+            Log.Write(l.Error, "--");
+            foreach (KeyValuePair<string, string> s in error.Data)
+                Log.Write(l.Error, "key: {0} value: {1}", s.Key, s.Value);
+            Log.Write(l.Error, "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
         }
 
         #endregion
