@@ -18,7 +18,11 @@ namespace FTPbox.Forms
         /// <summary>
         ///     the latest status used to set the status label
         /// </summary>
-        private TrayTextNotificationArgs _lastStatus;
+        private TrayTextNotificationArgs _lastStatus = new TrayTextNotificationArgs
+        {
+            AssossiatedFile = null,
+            MessageType = MessageType.AllSynced
+        };
 
         public fTrayForm()
         {
@@ -27,22 +31,12 @@ namespace FTPbox.Forms
             Notifications.TrayTextNotification += (o, n) =>
             {
                 if (IsHandleCreated)
-                    this.Invoke(new MethodInvoker(() => SetStatusLabel(n)));
+                    Invoke(new MethodInvoker(() => SetStatusLabel(o, n)));
                 else
                     _lastStatus = n;
             };
             // Make status label same color as the icons
             lCurrentStatus.ForeColor = Color.FromArgb(105, 105, 105);
-
-            Program.Account.Client.TransferProgress = new Progress<TransferProgress>(n =>
-            {
-                // Only when Downloading/Uploading.
-                if (!IsHandleCreated || string.IsNullOrWhiteSpace(_lastStatus.AssossiatedFile)) return;
-
-                // Update item in recent list
-                _transferItem.FileStatusLabel = string.Format(_transferItem.SubTitleFormat, n.ProgressFormatted);
-            });
-
         }
 
         private void fTrayForm_Load(object sender, EventArgs e)
@@ -50,13 +44,24 @@ namespace FTPbox.Forms
             // Make sure the border doesn't appear
             Text = string.Empty;
 
-            Notifications.RecentListChanged += (o, n) => this.Invoke(new MethodInvoker(LoadRecent));
+            Notifications.RecentListChanged += (o, n) => Invoke(new MethodInvoker(LoadRecent));
 
-            LoadRecent();
+            Program.Account.Client.TransferProgress += (o, n) =>
+            {
+                // Only when Downloading/Uploading.
+                if (string.IsNullOrWhiteSpace(_lastStatus.AssossiatedFile)) return;
+                // Update item in recent list
+                Invoke(new MethodInvoker(() =>
+                {
+                    // Get status progress for the transfer
+                    var progress = string.Format("{0,3}% - {1}", n.Progress, n.Rate);
 
+                    _transferItem.FileStatusLabel = string.Format(_transferItem.SubTitleFormat, progress);
+                }));
+            };
             // Set the status label and load the recent files
-            if (_lastStatus != null)
-                SetStatusLabel(_lastStatus);
+            SetStatusLabel(null, _lastStatus);
+            LoadRecent();
         }
 
         /// <summary>
@@ -90,7 +95,7 @@ namespace FTPbox.Forms
             }
         }
 
-        public void SetStatusLabel(TrayTextNotificationArgs e)
+        public void SetStatusLabel(object o, TrayTextNotificationArgs e)
         {
             try
             {
@@ -132,7 +137,7 @@ namespace FTPbox.Forms
             }
             catch (Exception ex)
             {
-                ex.LogException();
+                Common.LogError(ex);
             }
         }
 
@@ -210,9 +215,12 @@ namespace FTPbox.Forms
         {
             if (!IsHandleCreated) return;
 
-            // Set the status label and load the recent files
-            SetStatusLabel(_lastStatus);
-            LoadRecent();
+            Invoke(new MethodInvoker(() =>
+            {
+                // Set the status label and load the recent files
+                SetStatusLabel(null, _lastStatus);
+                LoadRecent();
+            }));
         }
     }
 }

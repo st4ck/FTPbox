@@ -543,7 +543,7 @@
             this.gFileFilters.Controls.Add(this.cIgnoreDotfiles);
             this.gFileFilters.Location = new System.Drawing.Point(8, 6);
             this.gFileFilters.Name = "gFileFilters";
-            this.gFileFilters.Size = new System.Drawing.Size(447, 198);
+            this.gFileFilters.Size = new System.Drawing.Size(447, 145);
             this.gFileFilters.TabIndex = 5;
             this.gFileFilters.TabStop = false;
             this.gFileFilters.Text = "File Filters";
@@ -594,6 +594,7 @@
             this.cIgnoreOldFiles.TabIndex = 9;
             this.cIgnoreOldFiles.Text = "Files modified before:";
             this.cIgnoreOldFiles.UseVisualStyleBackColor = true;
+            this.cIgnoreOldFiles.Visible = false;
             this.cIgnoreOldFiles.CheckedChanged += new System.EventHandler(this.cIgnoreOldFiles_CheckedChanged);
             // 
             // dtpLastModTime
@@ -603,9 +604,9 @@
             this.dtpLastModTime.Format = System.Windows.Forms.DateTimePickerFormat.Custom;
             this.dtpLastModTime.Location = new System.Drawing.Point(40, 167);
             this.dtpLastModTime.Name = "dtpLastModTime";
-            this.dtpLastModTime.Size = new System.Drawing.Size(231, 20);
+            this.dtpLastModTime.Size = new System.Drawing.Size(186, 20);
             this.dtpLastModTime.TabIndex = 8;
-            this.dtpLastModTime.Value = new System.DateTime(2000, 1, 1, 0, 0, 0, 0);
+            this.dtpLastModTime.Visible = false;
             this.dtpLastModTime.ValueChanged += new System.EventHandler(this.dtpLastModTime_ValueChanged);
             // 
             // labSelectExtensions
@@ -704,6 +705,7 @@
             this.cAuto.TabStop = true;
             this.cAuto.Text = "automatically every";
             this.cAuto.UseVisualStyleBackColor = true;
+            this.cAuto.CheckedChanged += new System.EventHandler(this.cAuto_CheckedChanged);
             // 
             // cManually
             // 
@@ -1168,6 +1170,8 @@
         private System.Windows.Forms.Label label11;
         private System.Windows.Forms.Label labContactMe;
         private System.Windows.Forms.Label labFree;
+        private System.IO.FileSystemWatcher fswFiles;
+        private System.IO.FileSystemWatcher fswFolders;
         private System.Windows.Forms.NotifyIcon tray;
         private System.Windows.Forms.ContextMenuStrip trayMenu;
         private System.Windows.Forms.ToolStripMenuItem optionsToolStripMenuItem;
