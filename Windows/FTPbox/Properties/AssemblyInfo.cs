@@ -7,11 +7,11 @@ using System.Resources;
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
 [assembly: AssemblyTitle("FTPbox")]
-[assembly: AssemblyDescription("sync to your host via ftp")]
+[assembly: AssemblyDescription("Sync to your host via FTP, FTPS or SFTP")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("ftpbox.org")]
 [assembly: AssemblyProduct("FTPbox")]
-[assembly: AssemblyCopyright("Copyright ©  2012-2013")]
+[assembly: AssemblyCopyright("Copyright ©  2017")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
@@ -33,6 +33,6 @@ using System.Resources;
 // You can specify all the values or you can default the Build and Revision Numbers 
 // by using the '*' as shown below:
 // [assembly: AssemblyVersion("1.0.*")]
-[assembly: AssemblyVersion("2.6.3.1")]
-[assembly: AssemblyFileVersion("2.6.3.1")]
+[assembly: AssemblyVersion("2.6.4.0")]
+[assembly: AssemblyFileVersion("2.6.4.0")]
 [assembly: NeutralResourcesLanguageAttribute("en")]
