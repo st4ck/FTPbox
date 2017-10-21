@@ -817,7 +817,14 @@ namespace FTPboxLib
                 DateTime tmp = DateTime.MinValue;
                 lock (ftpcLock)
                 {
-                    tmp = _sftpc.GetLastAccessTimeUtc(path);
+                    try
+                    {
+                        tmp = _sftpc.GetLastAccessTimeUtc(path);
+                    } catch(Exception ex)
+                    {
+                        Log.Write(l.Client, "===> some files/directory changed");
+                        Common.LogError(ex);
+                    }
                 }
                 Log.Write(l.Client, "Got LWT: {0} UTC: {1}", dt, tmp);
             }
