@@ -6,6 +6,9 @@ About
 
 Synchronize your files with your own server, via FTP, FTPS or SFTP. Learn more on [ftpbox.org][website]
 
+### Latest release
+- Latest release is [v2.6.4][latestrelease] updated on 21/10/2017
+
 ### Upgrade
 
 - Project upgraded to .NET Framework 4.5.2
@@ -41,7 +44,6 @@ Synchronize your files with your own server, via FTP, FTPS or SFTP. Learn more o
 - Use if possible latest TLSv1.2 encryption protocol 
 - When configure your FTP server pay attention to change Size and Timeout Data/Connection transfer. Otherwise if the file is big FTPbox was unable to end uploading
 Example: in Proftpd conf add/change TimeoutNoTransfer, TimeoutStalled, TimeoutIdle, MaxStoreFileSize
-
 
 ### License
 
@@ -91,3 +93,4 @@ You can show the project some love by making a donation! You can find out how to
 [sshnet]: http://sshnet.codeplex.com/
 [jsonnet]: http://json.codeplex.com/
 [dotnetzip]: http://dotnetzip.codeplex.com/
+[latestrelease]: https://github.com/st4ck/FTPbox/releases/tag/v2.6.4
