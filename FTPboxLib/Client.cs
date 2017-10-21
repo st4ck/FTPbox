@@ -773,7 +773,13 @@ namespace FTPboxLib
                 bool exists = false;
                 lock (ftpcLock)
                 {
-                    exists = _ftpc.FileExists(cpath) || _ftpc.DirectoryExists(cpath);
+                    try
+                    {
+                        exists = _ftpc.FileExists(cpath) || _ftpc.DirectoryExists(cpath);
+                    } catch (Exception ex)
+                    {
+                        Common.LogError(ex);
+                    }
                 }
                 return exists;
             } else

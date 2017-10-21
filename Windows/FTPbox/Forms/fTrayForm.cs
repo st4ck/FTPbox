@@ -39,10 +39,38 @@ namespace FTPbox.Forms
             lCurrentStatus.ForeColor = Color.FromArgb(105, 105, 105);
         }
 
+        public class NewProgressBar : ProgressBar
+        {
+            public NewProgressBar()
+            {
+                this.SetStyle(ControlStyles.UserPaint, true);
+            }
+
+            protected override void OnPaint(PaintEventArgs e)
+            {
+                Rectangle rec = e.ClipRectangle;
+
+                rec.Width = (int)(rec.Width * ((double)Value / Maximum));
+                if (ProgressBarRenderer.IsSupported)
+                    ProgressBarRenderer.DrawHorizontalBar(e.Graphics, e.ClipRectangle);
+                rec.Height = rec.Height;
+                e.Graphics.FillRectangle(new SolidBrush(Color.FromArgb(0,153,255)), 0, 0, rec.Width, rec.Height);
+            }
+        }
+
+        private NewProgressBar progressBar1;
+
         private void fTrayForm_Load(object sender, EventArgs e)
         {
             // Make sure the border doesn't appear
             Text = string.Empty;
+
+            progressBar1 = new NewProgressBar();
+            progressBar1.Dock = DockStyle.Top;
+            progressBar1.Height = 10;
+            progressBar1.Width = 324;
+            progressBar1.Margin = new Padding(0);
+            this.Controls.Add(progressBar1);
 
             Notifications.RecentListChanged += (o, n) => Invoke(new MethodInvoker(LoadRecent));
 
@@ -57,6 +85,8 @@ namespace FTPbox.Forms
                     var progress = string.Format("{0,3}% - {1}", n.Progress, n.Rate);
 
                     _transferItem.FileStatusLabel = string.Format(_transferItem.SubTitleFormat, progress);
+
+                    progressBar1.Value = n.Progress;
                 }));
             };
             // Set the status label and load the recent files

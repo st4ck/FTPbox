@@ -39,9 +39,9 @@
             // lCurrentStatus
             // 
             this.lCurrentStatus.BackColor = System.Drawing.Color.Transparent;
-            this.lCurrentStatus.Location = new System.Drawing.Point(68, 228);
+            this.lCurrentStatus.Location = new System.Drawing.Point(68, 233);
             this.lCurrentStatus.Name = "lCurrentStatus";
-            this.lCurrentStatus.Size = new System.Drawing.Size(234, 13);
+            this.lCurrentStatus.Size = new System.Drawing.Size(250, 13);
             this.lCurrentStatus.TabIndex = 1;
             this.lCurrentStatus.Text = "All files synchronized";
             this.lCurrentStatus.TextAlign = System.Drawing.ContentAlignment.TopRight;
@@ -50,9 +50,9 @@
             // 
             this.fRecentList.AutoScroll = true;
             this.fRecentList.BackColor = System.Drawing.Color.White;
-            this.fRecentList.Location = new System.Drawing.Point(0, 0);
+            this.fRecentList.Location = new System.Drawing.Point(0, 10);
             this.fRecentList.Name = "fRecentList";
-            this.fRecentList.Size = new System.Drawing.Size(315, 217);
+            this.fRecentList.Size = new System.Drawing.Size(324, 209);
             this.fRecentList.TabIndex = 2;
             // 
             // pLocalFolder
@@ -61,7 +61,7 @@
             this.pLocalFolder.BackColor = System.Drawing.Color.Transparent;
             this.pLocalFolder.Cursor = System.Windows.Forms.Cursors.Hand;
             this.pLocalFolder.Image = global::FTPbox.Properties.Resources.folder;
-            this.pLocalFolder.Location = new System.Drawing.Point(42, 226);
+            this.pLocalFolder.Location = new System.Drawing.Point(42, 231);
             this.pLocalFolder.Name = "pLocalFolder";
             this.pLocalFolder.Size = new System.Drawing.Size(16, 16);
             this.pLocalFolder.SizeMode = System.Windows.Forms.PictureBoxSizeMode.StretchImage;
@@ -75,7 +75,7 @@
             this.pSettings.BackColor = System.Drawing.Color.Transparent;
             this.pSettings.Cursor = System.Windows.Forms.Cursors.Hand;
             this.pSettings.Image = global::FTPbox.Properties.Resources.settings;
-            this.pSettings.Location = new System.Drawing.Point(12, 226);
+            this.pSettings.Location = new System.Drawing.Point(12, 231);
             this.pSettings.Name = "pSettings";
             this.pSettings.Size = new System.Drawing.Size(16, 16);
             this.pSettings.SizeMode = System.Windows.Forms.PictureBoxSizeMode.StretchImage;
@@ -87,13 +87,13 @@
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(314, 251);
+            this.ClientSize = new System.Drawing.Size(324, 261);
             this.ControlBox = false;
             this.Controls.Add(this.pSettings);
             this.Controls.Add(this.pLocalFolder);
             this.Controls.Add(this.fRecentList);
             this.Controls.Add(this.lCurrentStatus);
-            this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.SizableToolWindow;
+            this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedSingle;
             this.MaximumSize = new System.Drawing.Size(330, 267);
             this.MinimumSize = new System.Drawing.Size(330, 267);
             this.Name = "fTrayForm";
