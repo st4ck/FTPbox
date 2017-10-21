@@ -54,10 +54,17 @@ namespace FTPbox.Forms
         {
             InitializeComponent();
             PopulateLanguages();
+            
         }
 
         private void fMain_Load(object sender, EventArgs e)
         {
+            // hide config window at startup
+            BeginInvoke(new MethodInvoker(delegate
+            {
+                Hide();
+            }));
+
             NetworkChange.NetworkAddressChanged += OnNetworkChange;
 
             //TODO: Should this stay?
