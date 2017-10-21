@@ -71,14 +71,6 @@ I'd love to hear from you. Please send your emails to support@ftpbox.org
 Support
 --------------
 
-### Reporting
-
-See [Feedback](https://github.com/FTPbox/FTPbox/wiki/Feedback)
-
-### Translate
-
-See [Translating](https://github.com/FTPbox/FTPbox/wiki/Translating)
-
 ### Donate
 
 You can show the project some love by making a donation! You can find out how to donate from the [About][abt] page.
@@ -86,7 +78,7 @@ You can show the project some love by making a donation! You can find out how to
 [website]: http://ftpbox.org
 [webUI]: https://github.com/FTPbox/Web-Interface
 [gpl]: http://www.tldrlegal.com/license/gnu-general-public-license-v3-(gpl-3)
-[license]: https://github.com/FTPbox/FTPbox/blob/master/LICENSE
+[license]: https://github.com/st4ck/FTPbox/blob/master/LICENSE
 [todo]: https://trello.com/board/ftpbox/515afda9a23fa0b412001067
 [abt]: http://ftpbox.org/about/
 [fluentftp]: https://github.com/robinrodricks/FluentFTP/tree/master/FluentFTP/
