@@ -50,9 +50,9 @@
             // 
             this.fRecentList.AutoScroll = true;
             this.fRecentList.BackColor = System.Drawing.Color.White;
-            this.fRecentList.Location = new System.Drawing.Point(0, 10);
+            this.fRecentList.Location = new System.Drawing.Point(0, 0);
             this.fRecentList.Name = "fRecentList";
-            this.fRecentList.Size = new System.Drawing.Size(324, 209);
+            this.fRecentList.Size = new System.Drawing.Size(324, 219);
             this.fRecentList.TabIndex = 2;
             // 
             // pLocalFolder

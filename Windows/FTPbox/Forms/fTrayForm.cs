@@ -66,10 +66,12 @@ namespace FTPbox.Forms
             Text = string.Empty;
 
             progressBar1 = new NewProgressBar();
-            progressBar1.Dock = DockStyle.Top;
+            //progressBar1.Dock = DockStyle.Top;
             progressBar1.Height = 10;
             progressBar1.Width = 324;
             progressBar1.Margin = new Padding(0);
+            progressBar1.Location = new Point(0, 209);
+            progressBar1.Visible = false;
             this.Controls.Add(progressBar1);
 
             Notifications.RecentListChanged += (o, n) => Invoke(new MethodInvoker(LoadRecent));
@@ -86,7 +88,19 @@ namespace FTPbox.Forms
 
                     _transferItem.FileStatusLabel = string.Format(_transferItem.SubTitleFormat, progress);
 
+                    if (fRecentList.Height != 209)
+                    {
+                        fRecentList.Height = 209;
+                        progressBar1.Visible = true;
+                    }
+                    
                     progressBar1.Value = n.Progress;
+
+                    if (n.Progress == 100)
+                    {
+                        progressBar1.Visible = false;
+                        fRecentList.Height = 219;
+                    }
                 }));
             };
             // Set the status label and load the recent files
