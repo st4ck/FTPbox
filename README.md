@@ -8,6 +8,7 @@ Synchronize your files with your own server, via FTP, FTPS or SFTP. Learn more o
 
 ### Upgrade
 
+- Project upgraded to .NET Framework 4.5.2
 - Upgraded to new FluentFTP library compiled from sources
 - Using latest SSH.Net, Newtonsoft.Json, Ionic.Zip
 
