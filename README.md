@@ -29,6 +29,9 @@ Synchronize your files with your own server, via FTP, FTPS or SFTP. Learn more o
 - Multiple Profiles
 - Offline Mode
 
+### Testing
+- Tested intensively with ProFTPD 1.3.6 and 1.3.7rc1 (compiled from sources) with or without SSL and TLS
+
 ### License
 
 FTPbox is licensed under the [General Public License v3][gpl]. See [LICENSE][license] for the full text.
