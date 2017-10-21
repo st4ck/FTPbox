@@ -6,7 +6,7 @@ About
 
 Synchronize your files with your own server, via FTP, FTPS or SFTP. Learn more on [ftpbox.org][website]
 
-### Latest release
+### Latest release download
 - Latest release is [v2.6.4][latestrelease] updated on 21/10/2017
 
 ### Upgrade
