@@ -28,3 +28,9 @@ FTPboxLib/DecryptionInfo.cs
 *.nupkg
 # The packages folder can be ignored because of Package Restore
 **/packages/*
+/Windows/.vs/FTPbox/v15/Server/sqlite3/db.lock
+/Windows/.vs/FTPbox/v15/Server/sqlite3/storage.ide
+/Windows/.vs/FTPbox/v15/Server/sqlite3/storage.ide-shm
+/Windows/.vs/FTPbox/v15/Server/sqlite3/storage.ide-wal
+/.vs/slnx.sqlite
+/.vs/VSWorkspaceState.json

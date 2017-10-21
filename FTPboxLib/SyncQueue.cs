@@ -341,8 +341,12 @@ namespace FTPboxLib
                 base.Add(folder);
             }
 
+            Notifications.ChangeTrayText(MessageType.Listing);
+
             var remoteFilesList = cpExists ? new List<string>(_controller.Client.ListRecursive(cp).Select(x => x.FullPath)) : new List<string>();
             remoteFilesList = remoteFilesList.ConvertAll(x => _controller.GetCommonPath(x, false));
+
+            Notifications.ChangeTrayText(MessageType.Syncing);
 
             if (_controller.Client.ListingFailed)
             {

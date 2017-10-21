@@ -120,9 +120,9 @@ namespace FTPbox.Forms
             if (!string.IsNullOrEmpty(Settings.General.Language))
                 Set_Language(Settings.General.Language);
 
-            StartUpWork();
+            (new Thread(StartUpWork)).Start();
 
-            CheckForUpdate();
+            //CheckForUpdate();
         }
 
         /// <summary>
