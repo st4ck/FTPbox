@@ -4,7 +4,18 @@ FTPbox
 About
 --------------
 
-Synchronize your files with your own server, via FTP. Learn more on [ftpbox.org][website]
+Synchronize your files with your own server, via FTP, FTPS or SFTP. Learn more on [ftpbox.org][website]
+
+### Upgrade
+
+- Upgraded to new FluentFTP library compiled from sources
+- Using latest SSH.Net, Newtonsoft.Json, Ionic.Zip
+
+### Major Changes
+- Removing almost all async methods, the main function (check files local/remote) will run in a thread to avoid interface locking
+- Adding remote listing state when starting
+- Modify FluentFTP sources to avoid certain type of Exceptions and force Binary type in FTP SIZE command
+- So FluentFTP is now integrated with FTPbox sources. Allows easier and faster debug and better customization
 
 ### Main Features
 
@@ -25,7 +36,7 @@ FTPbox is licensed under the [General Public License v3][gpl]. See [LICENSE][lic
 ### Acknowledgements
 
 FTPbox uses the following awesome libraries:
-- [System.Net.FtpClient][netftp] : The FTP library
+- [FluentFTP][fluentftp] : The FluentFTP library
 - [SSH.NET][sshnet] : The SFTP library
 - [Json.NET][jsonnet] : The json library used for the configuration file
 - [DotNetZip][dotnetzip] : The library used for unzipping archives
@@ -36,10 +47,6 @@ Development
 ### To-Do
 
 You can find the to-do list on [trello.com][todo]
-
-### Changelog
-
-See [ftpbox.org/changelog](http://ftpbox.org/changelog)
 
 ### Get in touch
 
@@ -66,7 +73,7 @@ You can show the project some love by making a donation! You can find out how to
 [license]: https://github.com/FTPbox/FTPbox/blob/master/LICENSE
 [todo]: https://trello.com/board/ftpbox/515afda9a23fa0b412001067
 [abt]: http://ftpbox.org/about/
-[netftp]: http://netftp.codeplex.com/
+[fluentftp]: https://github.com/robinrodricks/FluentFTP/tree/master/FluentFTP/
 [sshnet]: http://sshnet.codeplex.com/
 [jsonnet]: http://json.codeplex.com/
 [dotnetzip]: http://dotnetzip.codeplex.com/
