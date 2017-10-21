@@ -29,6 +29,7 @@ using Microsoft.Win32;
 using Newtonsoft.Json;
 using Settings = FTPboxLib.Settings;
 using Timer = System.Threading.Timer;
+using System.ComponentModel;
 
 namespace FTPbox.Forms
 {
@@ -130,6 +131,20 @@ namespace FTPbox.Forms
             Thread mainThread = new Thread(StartUpWork);
             mainThread.SetApartmentState(ApartmentState.STA);
             mainThread.Start();
+
+            BackgroundWorker periodicCheck = new BackgroundWorker();
+            periodicCheck.DoWork += new DoWorkEventHandler((o, n) => {
+                while (true)
+                {
+                    Thread.Sleep(300000);
+
+                    if (ConnectedToInternet() && IsReady())
+                    {
+                        StartUpWork();
+                    }
+                }
+            });
+            periodicCheck.RunWorkerAsync();
 
             //CheckForUpdate();
         }
@@ -421,6 +436,18 @@ namespace FTPbox.Forms
             _ftranslate.ShowDialog();
         }
 
+        public bool IsReady()
+        {
+            if ((cState == 0) || (cState == 10))
+            {
+                return true;
+            }
+
+            return false;
+        }
+
+        private int cState = 0;
+
         public void SetTray(object o, TrayTextNotificationArgs e)
         {
             try
@@ -433,31 +460,37 @@ namespace FTPbox.Forms
                     case MessageType.Connecting:
                     case MessageType.Reconnecting:
                     case MessageType.Syncing:
+                        cState = 1;
                         tray.Icon = Resources.syncing;
                         tray.Text = Common.Languages[e.MessageType];
                         break;
                     case MessageType.Uploading:
                     case MessageType.Downloading:
+                        cState = 2;
                         tray.Icon = Resources.syncing;
                         tray.Text = Common.Languages[MessageType.Syncing];
                         break;
                     case MessageType.AllSynced:
                     case MessageType.Ready:
+                        cState = 0;
                         tray.Icon = Resources.AS;
                         tray.Text = Common.Languages[e.MessageType];
                         break;
                     case MessageType.Offline:
                     case MessageType.Disconnected:
+                        cState = -1;
                         tray.Icon = Resources.offline1;
                         tray.Text = Common.Languages[e.MessageType];
                         break;
                     case MessageType.Listing:
+                        cState = 3;
                         tray.Icon = Resources.AS;
                         tray.Text = (Program.Account.Account.SyncMethod == SyncMethod.Automatic)
                             ? Common.Languages[MessageType.AllSynced]
                             : Common.Languages[MessageType.Listing];
                         break;
                     case MessageType.Nothing:
+                        cState = 10;
                         tray.Icon = Resources.ftpboxnew;
                         tray.Text = Common.Languages[e.MessageType];
                         break;

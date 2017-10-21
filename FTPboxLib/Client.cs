@@ -25,6 +25,7 @@ using Renci.SshNet;
 using Renci.SshNet.Common;
 using Renci.SshNet.Sftp;
 using FluentFTP;
+using System.ComponentModel;
 #if !__MonoCs__
 using FileIO = Microsoft.VisualBasic.FileIO;
 
@@ -53,6 +54,8 @@ namespace FTPboxLib
         private Timer _tKeepAlive;
 
         private readonly AccountController _controller;
+
+        private BackgroundWorker connectionState = null;
 
         #endregion
 
@@ -212,8 +215,29 @@ namespace FTPboxLib
             _controller.HomePath = WorkingDirectory;
 
             if (isConnected)
+            {
                 if (!string.IsNullOrWhiteSpace(_controller.Paths.Remote) && !_controller.Paths.Remote.Equals("/"))
                     WorkingDirectory = _controller.Paths.Remote;
+
+                if (connectionState == null)
+                {
+                    connectionState = new BackgroundWorker();
+                    connectionState.DoWork += new DoWorkEventHandler((o, e) =>
+                    {
+                        while (true)
+                        {
+                            if (!isConnected)
+                            {
+                                _controller.Client.Reconnect();
+                            }
+                            Thread.Sleep(5000);
+                        }
+                    });
+
+                    connectionState.RunWorkerAsync();
+                }
+                
+            }
 
             Log.Write(l.Debug, "Client connected sucessfully");
             Notifications.ChangeTrayText(MessageType.Ready);
