@@ -22,7 +22,8 @@ _ReSharper*/
 *.DotSettings.user
 
 # Ignore DecryptionInfo file
-FTPboxLib/DecryptionInfo.cs
+/FTPboxLib/DecryptionInfo.cs
+DecryptionInfo.cs
 
 # NuGet Packages
 *.nupkg
