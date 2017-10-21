@@ -33,6 +33,12 @@ Synchronize your files with your own server, via FTP, FTPS or SFTP. Learn more o
 ### Testing
 - Tested intensively with ProFTPD 1.3.6 and 1.3.7rc1 (compiled from sources) with or without SSL and TLS
 
+### Advise
+- Use if possibile FTPS or SFTP; FTP has plain text authentication, not a good idea if you transfer important documents
+- When configure your FTP server pay attention to change Size and Timeout Data/Connection transfer. Otherwise if the file is big FTPbox was unable to end uploading
+Example: in Proftpd conf add/change TimeoutNoTransfer, TimeoutStalled, TimeoutIdle, MaxStoreFileSize
+
+
 ### License
 
 FTPbox is licensed under the [General Public License v3][gpl]. See [LICENSE][license] for the full text.
