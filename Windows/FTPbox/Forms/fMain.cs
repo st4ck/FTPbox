@@ -127,7 +127,9 @@ namespace FTPbox.Forms
             if (!string.IsNullOrEmpty(Settings.General.Language))
                 Set_Language(Settings.General.Language);
 
-            (new Thread(StartUpWork)).Start();
+            Thread mainThread = new Thread(StartUpWork);
+            mainThread.SetApartmentState(ApartmentState.STA);
+            mainThread.Start();
 
             //CheckForUpdate();
         }
@@ -183,7 +185,7 @@ namespace FTPbox.Forms
 
                 Log.Write(l.Info, "Done");
 
-                Show();
+                this.Invoke(new MethodInvoker(() => Show()));
             }
             else if (Program.Account.IsAccountSet)
                 try
