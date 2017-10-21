@@ -35,6 +35,7 @@ Synchronize your files with your own server, via FTP, FTPS or SFTP. Learn more o
 
 ### Advise
 - Use if possibile FTPS or SFTP; FTP has plain text authentication, not a good idea if you transfer important documents
+- Use if possible latest TLSv1.2 encryption protocol 
 - When configure your FTP server pay attention to change Size and Timeout Data/Connection transfer. Otherwise if the file is big FTPbox was unable to end uploading
 Example: in Proftpd conf add/change TimeoutNoTransfer, TimeoutStalled, TimeoutIdle, MaxStoreFileSize
 
