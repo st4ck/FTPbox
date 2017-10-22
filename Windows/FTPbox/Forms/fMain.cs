@@ -144,7 +144,8 @@ namespace FTPbox.Forms
                     }
                 }
             });
-            periodicCheck.RunWorkerAsync();
+            // RECONNECT
+            //periodicCheck.RunWorkerAsync();
 
             //CheckForUpdate();
         }

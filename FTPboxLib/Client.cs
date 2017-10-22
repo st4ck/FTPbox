@@ -228,7 +228,8 @@ namespace FTPboxLib
                         {
                             if (!isConnected)
                             {
-                                _controller.Client.Reconnect();
+                                // RECONNECT
+                                //_controller.Client.Reconnect();
                             }
                             Thread.Sleep(5000);
                         }
