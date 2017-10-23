@@ -115,9 +115,15 @@ namespace FTPboxLib
         {
             var ret = DateTime.MinValue;
 
-            foreach (var fi in Files)
-                if (fi.CommonPath == path)
-                    return fi.Local;
+            for (int i=0; i<Files.Count; i++)
+            {
+                try
+                {
+                    if (Files[i].CommonPath == path)
+                        return Files[i].Local;
+                } catch (Exception ex) { Common.LogError(ex); }
+
+            }
             return ret;
         }
 
