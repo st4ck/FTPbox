@@ -35,16 +35,6 @@ namespace FTPboxLib
         public SyncQueue(AccountController account)
         {
             _controller = account;
-            account.WebInterface.InterfaceRemoved += (o, e) =>
-            {
-                if (account.Account.SyncMethod == SyncMethod.Automatic) SetTimer();
-                Running = false;
-            };
-            account.WebInterface.InterfaceUploaded += (o, e) =>
-            {
-                if (account.Account.SyncMethod == SyncMethod.Automatic) SetTimer();
-                Running = false;
-            };
         }
 
         #region Methods : Handle the Queue List
@@ -111,9 +101,9 @@ namespace FTPboxLib
                                 else
                                     RemoveAt(IndexOf(i));
                             }
-                        } catch (NullReferenceException e)
+                        } catch (NullReferenceException ex)
                         {
-                            throw;
+                            throw ex;
                         }
                     break;
             }
@@ -233,14 +223,8 @@ namespace FTPboxLib
             _completedList.RemoveAll(x => x.Status != StatusType.Waiting);
             _controller.LoadLocalFolders();
 
-            // Check for any pending WebUI actions
-            if (_controller.WebInterface.DeletePending || _controller.WebInterface.UpdatePending)
-                _controller.WebInterface.Update();
-            else
-            {
-                if (_controller.Account.SyncMethod == SyncMethod.Automatic) SetTimer();
-                Running = false;
-            }
+            if (_controller.Account.SyncMethod == SyncMethod.Automatic) SetTimer();
+            Running = false;
         }               
 
         /// <summary>

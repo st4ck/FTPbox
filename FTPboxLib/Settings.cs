@@ -116,9 +116,9 @@ namespace FTPboxLib
                 
                 var configProf = JsonConvert.SerializeObject(Profiles, Formatting.Indented);
                 File.WriteAllText(ConfProfiles, configProf);
-            } catch (Exception e)
+            } catch (Exception ex)
             {
-
+                throw ex;
             }
         }
 

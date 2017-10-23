@@ -60,7 +60,7 @@ namespace FTPboxLib
             {
                 return AESEncryption.Decrypt(encrypted, DecryptionPassword, DecryptionSalt);
             }
-            catch (CryptographicException ex)
+            catch (CryptographicException)
             {
                 // Failed to decrypt, ask user for password.
                 return string.Empty;

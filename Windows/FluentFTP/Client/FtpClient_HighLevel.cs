@@ -1063,7 +1063,7 @@ namespace FluentFTP {
 						// seek to required offset
 						fileData.Position = offset;
 
-					} catch (Exception ex2) {
+					} catch (Exception) {
 					}
 				}
 

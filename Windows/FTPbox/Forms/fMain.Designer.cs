@@ -57,8 +57,6 @@
             this.labWayOfSync = new System.Windows.Forms.Label();
             this.rRemoteToLocalOnly = new System.Windows.Forms.RadioButton();
             this.rLocalToRemoteOnly = new System.Windows.Forms.RadioButton();
-            this.labViewInBrowser = new System.Windows.Forms.LinkLabel();
-            this.chkWebInt = new System.Windows.Forms.CheckBox();
             this.bConfigureAccount = new System.Windows.Forms.Button();
             this.labAccount = new System.Windows.Forms.Label();
             this.tabFilters = new System.Windows.Forms.TabPage();
@@ -396,8 +394,6 @@
             this.gAccount.Controls.Add(this.labWayOfSync);
             this.gAccount.Controls.Add(this.rRemoteToLocalOnly);
             this.gAccount.Controls.Add(this.rLocalToRemoteOnly);
-            this.gAccount.Controls.Add(this.labViewInBrowser);
-            this.gAccount.Controls.Add(this.chkWebInt);
             this.gAccount.Controls.Add(this.bConfigureAccount);
             this.gAccount.Controls.Add(this.labAccount);
             this.gAccount.Location = new System.Drawing.Point(8, 50);
@@ -410,7 +406,7 @@
             // tTempPrefix
             // 
             this.tTempPrefix.AccessibleDescription = "the prefix added to temporary files created by the application";
-            this.tTempPrefix.Location = new System.Drawing.Point(21, 181);
+            this.tTempPrefix.Location = new System.Drawing.Point(19, 154);
             this.tTempPrefix.Name = "tTempPrefix";
             this.tTempPrefix.Size = new System.Drawing.Size(408, 20);
             this.tTempPrefix.TabIndex = 24;
@@ -420,7 +416,7 @@
             // labTempPrefix
             // 
             this.labTempPrefix.AccessibleDescription = "";
-            this.labTempPrefix.Location = new System.Drawing.Point(8, 160);
+            this.labTempPrefix.Location = new System.Drawing.Point(6, 133);
             this.labTempPrefix.Name = "labTempPrefix";
             this.labTempPrefix.Size = new System.Drawing.Size(437, 13);
             this.labTempPrefix.TabIndex = 23;
@@ -431,7 +427,7 @@
             this.rBothWaySync.AccessibleDescription = "both upload and download";
             this.rBothWaySync.AccessibleName = "";
             this.rBothWaySync.Checked = true;
-            this.rBothWaySync.Location = new System.Drawing.Point(21, 136);
+            this.rBothWaySync.Location = new System.Drawing.Point(19, 109);
             this.rBothWaySync.Name = "rBothWaySync";
             this.rBothWaySync.Size = new System.Drawing.Size(408, 17);
             this.rBothWaySync.TabIndex = 21;
@@ -443,7 +439,7 @@
             // labWayOfSync
             // 
             this.labWayOfSync.AccessibleDescription = "";
-            this.labWayOfSync.Location = new System.Drawing.Point(8, 69);
+            this.labWayOfSync.Location = new System.Drawing.Point(6, 42);
             this.labWayOfSync.Name = "labWayOfSync";
             this.labWayOfSync.Size = new System.Drawing.Size(437, 13);
             this.labWayOfSync.TabIndex = 22;
@@ -453,7 +449,7 @@
             // 
             this.rRemoteToLocalOnly.AccessibleDescription = "only download files to local machine";
             this.rRemoteToLocalOnly.AccessibleName = "";
-            this.rRemoteToLocalOnly.Location = new System.Drawing.Point(21, 113);
+            this.rRemoteToLocalOnly.Location = new System.Drawing.Point(19, 86);
             this.rRemoteToLocalOnly.Name = "rRemoteToLocalOnly";
             this.rRemoteToLocalOnly.Size = new System.Drawing.Size(408, 17);
             this.rRemoteToLocalOnly.TabIndex = 20;
@@ -465,38 +461,13 @@
             // 
             this.rLocalToRemoteOnly.AccessibleDescription = "only upload files to server";
             this.rLocalToRemoteOnly.AccessibleName = "";
-            this.rLocalToRemoteOnly.Location = new System.Drawing.Point(21, 90);
+            this.rLocalToRemoteOnly.Location = new System.Drawing.Point(19, 63);
             this.rLocalToRemoteOnly.Name = "rLocalToRemoteOnly";
             this.rLocalToRemoteOnly.Size = new System.Drawing.Size(408, 17);
             this.rLocalToRemoteOnly.TabIndex = 19;
             this.rLocalToRemoteOnly.Text = "Local to remote only";
             this.rLocalToRemoteOnly.UseVisualStyleBackColor = true;
             this.rLocalToRemoteOnly.CheckedChanged += new System.EventHandler(this.rWayOfSync_CheckedChanged);
-            // 
-            // labViewInBrowser
-            // 
-            this.labViewInBrowser.AccessibleDescription = "opens the web interface in browser";
-            this.labViewInBrowser.AccessibleName = "View in browser";
-            this.labViewInBrowser.AutoSize = true;
-            this.labViewInBrowser.Location = new System.Drawing.Point(186, 46);
-            this.labViewInBrowser.Name = "labViewInBrowser";
-            this.labViewInBrowser.Size = new System.Drawing.Size(87, 13);
-            this.labViewInBrowser.TabIndex = 16;
-            this.labViewInBrowser.TabStop = true;
-            this.labViewInBrowser.Text = "(View in browser)";
-            this.labViewInBrowser.LinkClicked += new System.Windows.Forms.LinkLabelLinkClickedEventHandler(this.labViewInBrowser_LinkClicked);
-            // 
-            // chkWebInt
-            // 
-            this.chkWebInt.AccessibleDescription = "";
-            this.chkWebInt.AccessibleName = "use the web interface?";
-            this.chkWebInt.Location = new System.Drawing.Point(8, 45);
-            this.chkWebInt.Name = "chkWebInt";
-            this.chkWebInt.Size = new System.Drawing.Size(433, 17);
-            this.chkWebInt.TabIndex = 15;
-            this.chkWebInt.Text = "Use the web interface";
-            this.chkWebInt.UseVisualStyleBackColor = true;
-            this.chkWebInt.CheckedChanged += new System.EventHandler(this.chkWebInt_CheckedChanged);
             // 
             // bConfigureAccount
             // 
@@ -1062,39 +1033,39 @@
             // optionsToolStripMenuItem
             // 
             this.optionsToolStripMenuItem.Name = "optionsToolStripMenuItem";
-            this.optionsToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
+            this.optionsToolStripMenuItem.Size = new System.Drawing.Size(142, 22);
             this.optionsToolStripMenuItem.Text = "Options";
             this.optionsToolStripMenuItem.Click += new System.EventHandler(this.optionsToolStripMenuItem_Click);
             // 
             // toolStripSeparator2
             // 
             this.toolStripSeparator2.Name = "toolStripSeparator2";
-            this.toolStripSeparator2.Size = new System.Drawing.Size(149, 6);
+            this.toolStripSeparator2.Size = new System.Drawing.Size(139, 6);
             // 
             // SyncToolStripMenuItem
             // 
             this.SyncToolStripMenuItem.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(161)));
             this.SyncToolStripMenuItem.Name = "SyncToolStripMenuItem";
-            this.SyncToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
+            this.SyncToolStripMenuItem.Size = new System.Drawing.Size(142, 22);
             this.SyncToolStripMenuItem.Text = "Start syncing";
             this.SyncToolStripMenuItem.Click += new System.EventHandler(this.SyncToolStripMenuItem_Click);
             // 
             // toolStripSeparator1
             // 
             this.toolStripSeparator1.Name = "toolStripSeparator1";
-            this.toolStripSeparator1.Size = new System.Drawing.Size(149, 6);
+            this.toolStripSeparator1.Size = new System.Drawing.Size(139, 6);
             // 
             // aboutToolStripMenuItem
             // 
             this.aboutToolStripMenuItem.Name = "aboutToolStripMenuItem";
-            this.aboutToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
+            this.aboutToolStripMenuItem.Size = new System.Drawing.Size(142, 22);
             this.aboutToolStripMenuItem.Text = "About";
             this.aboutToolStripMenuItem.Click += new System.EventHandler(this.aboutToolStripMenuItem_Click);
             // 
             // exitToolStripMenuItem
             // 
             this.exitToolStripMenuItem.Name = "exitToolStripMenuItem";
-            this.exitToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
+            this.exitToolStripMenuItem.Size = new System.Drawing.Size(142, 22);
             this.exitToolStripMenuItem.Text = "Exit";
             this.exitToolStripMenuItem.Click += new System.EventHandler(this.exitToolStripMenuItem_Click);
             // 
@@ -1222,8 +1193,6 @@
         private System.Windows.Forms.Label labSelectiveSync;
         private System.Windows.Forms.Button bConfigureSelectiveSync;
         private System.Windows.Forms.Button bConfigureAccount;
-        private System.Windows.Forms.LinkLabel labViewInBrowser;
-        private System.Windows.Forms.CheckBox chkWebInt;
         private System.Windows.Forms.RadioButton rBothWaySync;
         private System.Windows.Forms.Label labWayOfSync;
         private System.Windows.Forms.RadioButton rRemoteToLocalOnly;

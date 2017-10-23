@@ -88,36 +88,6 @@ namespace FTPbox.Forms
 
             Program.Account.Client.ValidateCertificate += CheckCertificate;
 
-            Program.Account.WebInterface.UpdateFound += (o, n) =>
-            {
-                const string msg = "A new version of the web interface is available, do you want to upgrade to it?";
-                if (
-                    MessageBox.Show(msg, "FTPbox - WebUI Update", MessageBoxButtons.YesNo, MessageBoxIcon.Information) ==
-                    DialogResult.Yes)
-                {
-                    Program.Account.WebInterface.UpdatePending = true;
-                    Program.Account.WebInterface.Update();
-                }
-            };
-            Program.Account.WebInterface.InterfaceRemoved += (o, n) =>
-            {
-                Invoke(new MethodInvoker(() =>
-                {
-                    chkWebInt.Enabled = true;
-                    labViewInBrowser.Enabled = false;
-                }));
-                Link = string.Empty;
-            };
-            Program.Account.WebInterface.InterfaceUploaded += (o, n) =>
-            {
-                Invoke(new MethodInvoker(() =>
-                {
-                    chkWebInt.Enabled = true;
-                    labViewInBrowser.Enabled = true;
-                }));
-                Link = Program.Account.WebInterfaceLink;
-            };
-
             Notifications.TrayTextNotification += (o, n) => Invoke(new MethodInvoker(() => SetTray(o, n)));
 
             _fSetup = new Setup {Tag = this};
@@ -316,14 +286,10 @@ namespace FTPbox.Forms
             Set_Language(Settings.General.Language);
 
             // Disable the following in offline mode
-            chkWebInt.Enabled = !OfflineMode;
             SyncToolStripMenuItem.Enabled = !OfflineMode;
 
             if (OfflineMode || !GotPaths) return;
 
-            var e = Program.Account.WebInterface.Exists;
-            chkWebInt.Checked = e;
-            labViewInBrowser.Enabled = e;
             _changedfromcheck = false;
 
             Program.Account.FolderWatcher.Setup();
@@ -631,8 +597,6 @@ namespace FTPbox.Forms
             bRemoveAccount.Text = Common.Languages[UiControl.Remove];
             labAccount.Text = Common.Languages[UiControl.Account];
             bConfigureAccount.Text = Common.Languages[UiControl.Details];
-            chkWebInt.Text = Common.Languages[UiControl.UseWebUi];
-            labViewInBrowser.Text = Common.Languages[UiControl.ViewInBrowser];
             labWayOfSync.Text = Common.Languages[UiControl.WayOfSync];
             rLocalToRemoteOnly.Text = Common.Languages[UiControl.LocalToRemoteSync];
             rRemoteToLocalOnly.Text = Common.Languages[UiControl.RemoteToLocalSync];
@@ -1375,30 +1339,6 @@ namespace FTPbox.Forms
         {
             Settings.General.Notifications = chkShowNots.Checked;
             Settings.SaveGeneral();
-        }
-
-        private void chkWebInt_CheckedChanged(object sender, EventArgs e)
-        {
-            if (!Program.Account.Client.isConnected) return;
-
-            if (!_changedfromcheck)
-            {
-                if (chkWebInt.Checked)
-                    Program.Account.WebInterface.UpdatePending = true;
-                else
-                    Program.Account.WebInterface.DeletePending = true;
-
-                chkWebInt.Enabled = false;
-
-                if (!Program.Account.SyncQueue.Running)
-                    Program.Account.WebInterface.Update();
-            }
-            _changedfromcheck = false;
-        }
-
-        private void labViewInBrowser_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
-        {
-            Process.Start(Program.Account.WebInterfaceLink);
         }
 
         private void chkEnableLogging_CheckedChanged(object sender, EventArgs e)

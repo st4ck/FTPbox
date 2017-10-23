@@ -319,7 +319,7 @@ namespace FluentFTP {
 						if (se.ErrorCode != 10048)
 							throw;
 #else
-                        throw;
+                        throw se;
 #endif
 					}
 				}

@@ -76,7 +76,7 @@ namespace FTPbox
             get
             {
                 string[] dlls = { "FTPboxLib.dll", "FluentFTP.dll", "Renci.SshNet.dll", 
-                                    "Ionic.Zip.Reduced.dll", "Newtonsoft.Json.dll" };
+                                    "Newtonsoft.Json.dll" };
 
                 return dlls.All(s => File.Exists(Path.Combine(Application.StartupPath, s)));
             }

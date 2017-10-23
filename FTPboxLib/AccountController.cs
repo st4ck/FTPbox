@@ -34,15 +34,12 @@ namespace FTPboxLib
 
         public Client Client;
 
-        public WebInterface WebInterface;
-
         public AccountController()
         {
             IgnoreList = new IgnoreList();
             FileLog = new FileLog(this);
             FolderWatcher = new FolderWatcher(this);
 
-            WebInterface = new WebInterface(this);
             SyncQueue = new SyncQueue(this);
 
             Client = new Client(this);
