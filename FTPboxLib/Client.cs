@@ -723,7 +723,7 @@ namespace FTPboxLib
             var rate = (int) (elapsed.TotalSeconds < 1 ? transfered : transfered/elapsed.TotalSeconds);
             if (limit > 0 && rate > 1000*limit)
             {
-                double millisecDelay = (transfered/limit - elapsed.Milliseconds);
+                double millisecDelay = (transfered/limit - elapsed.TotalMilliseconds);
 
                 if (millisecDelay > Int32.MaxValue)
                     millisecDelay = Int32.MaxValue;
