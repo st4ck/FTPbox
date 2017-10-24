@@ -42,7 +42,12 @@ namespace FTPboxLib
 
             SyncQueue = new SyncQueue(this);
 
-            Client = new Client(this);
+
+            if (this.Account.Protocol == FtpProtocol.SFTP)
+                Client = new SFTPClient(this);
+            else
+                Client = new FTPClient(this);
+
         }
 
         #region Properties

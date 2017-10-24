@@ -27,7 +27,6 @@ namespace FTPboxLib
     public class SyncQueue : List<SyncQueueItem>
     {
         private readonly List<SyncQueueItem> _completedList = new List<SyncQueueItem>();
-        private Thread _rcThread;
         // Timer used to schedule automatic syncing according to user's preferences
         private Timer _tSync;
 

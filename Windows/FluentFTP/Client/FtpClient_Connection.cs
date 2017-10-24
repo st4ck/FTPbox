@@ -13,10 +13,6 @@ using System.Security.Authentication;
 using System.Net;
 using System.Web;
 using FluentFTP.Proxy;
-#if !CORE
-using System.Web;
-#endif
-
 #if (CORE || NETFX)
 using System.Threading;
 #endif
