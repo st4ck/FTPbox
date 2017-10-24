@@ -215,10 +215,10 @@ namespace FTPboxLib
             {
                 Console.WriteLine("NOOP");
 
-                    lock (ftpcLock)
-                    {
-                        _sftpc.SendKeepAlive();
-                    }
+                lock (ftpcLock)
+                {
+                    _sftpc.SendKeepAlive();
+                }
             }
             catch (Exception ex)
             {
@@ -252,11 +252,11 @@ namespace FTPboxLib
 
         public void Upload(string localpath, string remotepath)
         {
-            
-                using (var file = File.OpenRead(localpath)) lock (ftpcLock)
-                    {
-                        _sftpc.UploadFile(file, remotepath, true);
-                    }
+
+            using (var file = File.OpenRead(localpath)) lock (ftpcLock)
+                {
+                    _sftpc.UploadFile(file, remotepath, true);
+                }
         }
 
         /// <summary>
@@ -288,18 +288,18 @@ namespace FTPboxLib
                 var startedOn = DateTime.Now;
                 long transfered = 0;
                 // upload to a temp file...
-                
-                    using (var file = File.Open(i.LocalPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
-                        lock (ftpcLock)
+
+                using (var file = File.Open(i.LocalPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+                    lock (ftpcLock)
+                    {
+                        _sftpc.UploadFile(file, temp, true,
+                        d =>
                         {
-                            _sftpc.UploadFile(file, temp, true,
-                            d =>
-                            {
-                                ReportTransferProgress(new TransferProgressArgs((long)d - transfered, (long)d, i,
-                                    startedOn));
-                                transfered = (long)d;
-                            });
-                        }
+                            ReportTransferProgress(new TransferProgressArgs((long)d - transfered, (long)d, i,
+                                startedOn));
+                            transfered = (long)d;
+                        });
+                    }
             }
             catch (Exception ex)
             {
@@ -325,11 +325,11 @@ namespace FTPboxLib
         public void Download(string cpath, string lpath)
         {
 
-                using (var f = new FileStream(lpath, FileMode.Create, FileAccess.ReadWrite))
-                    lock (ftpcLock)
-                    {
-                        _sftpc.DownloadFile(cpath, f);
-                    }
+            using (var f = new FileStream(lpath, FileMode.Create, FileAccess.ReadWrite))
+                lock (ftpcLock)
+                {
+                    _sftpc.DownloadFile(cpath, f);
+                }
         }
 
         /// <summary>
@@ -348,18 +348,18 @@ namespace FTPboxLib
                 var startedOn = DateTime.Now;
                 long transfered = 0;
                 // download to a temp file...
-                
-                    using (var f = new FileStream(temp, FileMode.Create, FileAccess.ReadWrite))
-                        lock (ftpcLock)
+
+                using (var f = new FileStream(temp, FileMode.Create, FileAccess.ReadWrite))
+                    lock (ftpcLock)
+                    {
+                        _sftpc.DownloadFile(i.CommonPath, f,
+                        d =>
                         {
-                            _sftpc.DownloadFile(i.CommonPath, f,
-                            d =>
-                            {
-                                ReportTransferProgress(new TransferProgressArgs((long)d - transfered, (long)d, i,
-                                    startedOn));
-                                transfered = (long)d;
-                            });
-                        }
+                            ReportTransferProgress(new TransferProgressArgs((long)d - transfered, (long)d, i,
+                                startedOn));
+                            transfered = (long)d;
+                        });
+                    }
             }
             catch (Exception ex)
             {
@@ -396,10 +396,10 @@ namespace FTPboxLib
         public override void Rename(string oldname, string newname)
         {
 
-                lock (ftpcLock)
-                {
-                    _sftpc.RenameFile(oldname, newname);
-                }
+            lock (ftpcLock)
+            {
+                _sftpc.RenameFile(oldname, newname);
+            }
         }
 
         public override void MakeFolder(string cpath)
@@ -407,10 +407,10 @@ namespace FTPboxLib
             try
             {
 
-                    lock (ftpcLock)
-                    {
-                        _sftpc.CreateDirectory(cpath);
-                    }
+                lock (ftpcLock)
+                {
+                    _sftpc.CreateDirectory(cpath);
+                }
             }
             catch
             {
@@ -425,10 +425,10 @@ namespace FTPboxLib
         public override void Remove(string cpath)
         {
 
-                lock (ftpcLock)
-                {
-                    _sftpc.Delete(cpath);
-                }
+            lock (ftpcLock)
+            {
+                _sftpc.Delete(cpath);
+            }
         }
 
         /// <summary>
@@ -453,17 +453,17 @@ namespace FTPboxLib
                 else
                 {
 
-                        lock (ftpcLock)
-                        {
-                            _sftpc.DeleteDirectory(i.FullPath);
-                        }
+                    lock (ftpcLock)
+                    {
+                        _sftpc.DeleteDirectory(i.FullPath);
+                    }
                 }
             }
 
-                lock (ftpcLock)
-                {
-                    _sftpc.DeleteDirectory(path);
-                }
+            lock (ftpcLock)
+            {
+                _sftpc.DeleteDirectory(path);
+            }
 
             Log.Write(l.Client, "Deleted: {0}", path);
         }
@@ -522,13 +522,13 @@ namespace FTPboxLib
         {
             Log.Write(l.Client, "////////////////////Server Info///////////////////");
 
-                Log.Write(l.Client, "Protocol Version: {0}", _sftpc.ProtocolVersion);
-                Log.Write(l.Client, "Client Compression Algorithm: {0}",
-                    _sftpc.ConnectionInfo.CurrentClientCompressionAlgorithm);
-                Log.Write(l.Client, "Server Compression Algorithm: {0}",
-                    _sftpc.ConnectionInfo.CurrentServerCompressionAlgorithm);
-                Log.Write(l.Client, "Client encryption: {0}", _sftpc.ConnectionInfo.CurrentClientEncryption);
-                Log.Write(l.Client, "Server encryption: {0}", _sftpc.ConnectionInfo.CurrentServerEncryption);
+            Log.Write(l.Client, "Protocol Version: {0}", _sftpc.ProtocolVersion);
+            Log.Write(l.Client, "Client Compression Algorithm: {0}",
+                _sftpc.ConnectionInfo.CurrentClientCompressionAlgorithm);
+            Log.Write(l.Client, "Server Compression Algorithm: {0}",
+                _sftpc.ConnectionInfo.CurrentServerCompressionAlgorithm);
+            Log.Write(l.Client, "Client encryption: {0}", _sftpc.ConnectionInfo.CurrentClientEncryption);
+            Log.Write(l.Client, "Server encryption: {0}", _sftpc.ConnectionInfo.CurrentServerEncryption);
 
 
             Log.Write(l.Client, "//////////////////////////////////////////////////");
@@ -555,7 +555,7 @@ namespace FTPboxLib
 
             lock (ftpcLock)
             {
-                size =  _sftpc.GetAttributes(path).Size;
+                size = _sftpc.GetAttributes(path).Size;
             }
 
             return size;
@@ -567,12 +567,12 @@ namespace FTPboxLib
         public override bool Exists(string cpath)
         {
 
-                bool exists = false;
-                lock (ftpcLock)
-                {
-                    exists = _sftpc.Exists(cpath);
-                }
-                return exists;
+            bool exists = false;
+            lock (ftpcLock)
+            {
+                exists = _sftpc.Exists(cpath);
+            }
+            return exists;
 
         }
 
@@ -601,20 +601,20 @@ namespace FTPboxLib
                 Common.LogError(ex);
             }
 
-                DateTime tmp = DateTime.MinValue;
-                lock (ftpcLock)
+            DateTime tmp = DateTime.MinValue;
+            lock (ftpcLock)
+            {
+                try
                 {
-                    try
-                    {
-                        tmp = _sftpc.GetLastAccessTimeUtc(path);
-                    }
-                    catch (Exception ex)
-                    {
-                        Log.Write(l.Client, "===> some files/directory changed");
-                        Common.LogError(ex);
-                    }
+                    tmp = _sftpc.GetLastAccessTimeUtc(path);
                 }
-                Log.Write(l.Client, "Got LWT: {0} UTC: {1}", dt, tmp);
+                catch (Exception ex)
+                {
+                    Log.Write(l.Client, "===> some files/directory changed");
+                    Common.LogError(ex);
+                }
+            }
+            Log.Write(l.Client, "Got LWT: {0} UTC: {1}", dt, tmp);
 
             return dt;
         }
@@ -663,10 +663,10 @@ namespace FTPboxLib
             }
             set
             {
-                    lock (ftpcLock)
-                    {
-                        _sftpc.ChangeDirectory(value);
-                    }
+                lock (ftpcLock)
+                {
+                    _sftpc.ChangeDirectory(value);
+                }
                 Log.Write(l.Client, "cd {0}", value);
             }
         }
