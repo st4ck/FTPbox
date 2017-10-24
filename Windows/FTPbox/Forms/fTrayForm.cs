@@ -21,6 +21,7 @@ namespace FTPbox.Forms
         private TrayTextNotificationArgs _lastStatus = new TrayTextNotificationArgs
         {
             AssossiatedFile = null,
+            sizeValue = "0",
             MessageType = MessageType.AllSynced
         };
 
@@ -37,6 +38,8 @@ namespace FTPbox.Forms
             };
             // Make status label same color as the icons
             lCurrentStatus.ForeColor = Color.FromArgb(105, 105, 105);
+            lTitle.ForeColor = Color.FromArgb(105, 105, 105);
+            lSize.ForeColor = Color.FromArgb(105, 105, 105);
         }
 
         public class NewProgressBar : ProgressBar
@@ -70,7 +73,7 @@ namespace FTPbox.Forms
             progressBar1.Height = 10;
             progressBar1.Width = 344;
             progressBar1.Margin = new Padding(0);
-            progressBar1.Location = new Point(0, 209);
+            progressBar1.Location = new Point(0, 249);
             progressBar1.Visible = false;
             this.Controls.Add(progressBar1);
 
@@ -171,6 +174,9 @@ namespace FTPbox.Forms
                         lCurrentStatus.Text = (Program.Account.Account.SyncMethod == SyncMethod.Automatic)
                             ? Common.Languages[MessageType.AllSynced]
                             : Common.Languages[MessageType.Listing];
+                        break;
+                    case MessageType.Size:
+                        lSize.Text = "Spazio occupato " + e.sizeValue;
                         break;
                     default:
                         lCurrentStatus.Text = Common.Languages[e.MessageType];

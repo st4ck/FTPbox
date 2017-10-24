@@ -91,7 +91,8 @@ namespace FTPboxLib
         Offline, 
         Ready, 
         Nothing, 
-        NotAvailable
+        NotAvailable,
+        Size
     }
     
     public enum StatusType

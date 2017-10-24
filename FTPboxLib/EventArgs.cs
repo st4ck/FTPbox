@@ -53,6 +53,7 @@ namespace FTPboxLib
         //TODO:  Fix that shit
         public MessageType MessageType;
         public string AssossiatedFile;
+        public string sizeValue;
     }
 
     // EventArgs for transfer progress

@@ -324,8 +324,24 @@ namespace FTPboxLib
 
             Notifications.ChangeTrayText(MessageType.Listing);
 
-            var remoteFilesList = cpExists ? new List<string>(_controller.Client.ListRecursive(cp).Select(x => x.FullPath)) : new List<string>();
+            var remoteFilesList = new List<string>();
+
+            long globalSize = 0;
+
+            if (cpExists)
+            {
+                List<ClientItem> filesList = _controller.Client.ListRecursive(cp).ToList();
+                foreach (var x in filesList)
+                {
+                    remoteFilesList.Add(x.FullPath);
+                    globalSize += x.Size;
+                }
+                
+            }
+
             remoteFilesList = remoteFilesList.ConvertAll(x => _controller.GetCommonPath(x, false));
+
+            Notifications.ChangeTrayText(MessageType.Size, null, TransferProgressArgs.ConvertSize(globalSize));
 
             Notifications.ChangeTrayText(MessageType.Syncing);
 

@@ -765,7 +765,7 @@ namespace FTPboxLib
             {
                 lock (ftpcLock)
                 {
-                    list = Array.ConvertAll(new List<FtpListItem>(_ftpc.GetListing(cpath)).ToArray(), ConvertItem).ToList();
+                    list = Array.ConvertAll(new List<FtpListItem>(_ftpc.GetListing(cpath, FtpListOption.Size)).ToArray(), ConvertItem).ToList();
                 }
             }
             catch (Exception ex)
