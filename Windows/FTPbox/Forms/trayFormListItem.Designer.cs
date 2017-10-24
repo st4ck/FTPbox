@@ -73,7 +73,7 @@ namespace FTPbox.Forms
             this.pSeparationLine.BackColor = System.Drawing.SystemColors.Menu;
             this.pSeparationLine.Location = new System.Drawing.Point(1, 43);
             this.pSeparationLine.Name = "pSeparationLine";
-            this.pSeparationLine.Size = new System.Drawing.Size(289, 1);
+            this.pSeparationLine.Size = new System.Drawing.Size(309, 1);
             this.pSeparationLine.TabIndex = 4;
             // 
             // trayFormListItem
@@ -84,7 +84,8 @@ namespace FTPbox.Forms
             this.Controls.Add(this.lStatusLabel);
             this.Controls.Add(this.lFileName);
             this.Name = "trayFormListItem";
-            this.Size = new System.Drawing.Size(290, 44);
+            this.Size = new System.Drawing.Size(310, 44);
+            this.Load += new System.EventHandler(this.trayFormListItem_Load);
             ((System.ComponentModel.ISupportInitialize)(this.pbFileIcon)).EndInit();
             this.ResumeLayout(false);
             this.PerformLayout();

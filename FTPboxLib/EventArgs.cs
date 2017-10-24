@@ -92,13 +92,25 @@ namespace FTPboxLib
             {
                 var elapsed = DateTime.Now.Subtract(StartedOn);
                 var rate = (int)(elapsed.TotalSeconds < 1 ? TotalTransferred : TotalTransferred / elapsed.TotalSeconds);
-                var f = rate <= 1024 ? "bytes" : "kb";
-                if (rate > 1024) rate /= 1024;
+                var f = ConvertSize(rate);
 
-                Console.Write("\r Transferred {0:p} bytes @ {1} {2}/s", TotalTransferred / (double)Item.Item.Size, rate, f);
+                Console.Write("\r Transferred {0:p} bytes @ {1}/s", TotalTransferred / (double)Item.Item.Size, f);
 
-                return string.Format("{0} {1}/s", rate, f);
+                return string.Format("{0}/s", f);
             }
+        }
+
+        public static string ConvertSize(double len)
+        {
+            string[] sizes = { "B", "kB", "MB", "GB", "TB", "PB", "EB" };
+            int order = 0;
+            while (len >= 1024 && order < sizes.Length - 1)
+            {
+                order++;
+                len = len / 1024;
+            }
+
+            return String.Format("{0:0.#}{1}", len, sizes[order]);
         }
     }
 }

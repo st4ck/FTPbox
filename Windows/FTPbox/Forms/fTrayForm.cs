@@ -84,7 +84,8 @@ namespace FTPbox.Forms
                 Invoke(new MethodInvoker(() =>
                 {
                     // Get status progress for the transfer
-                    var progress = string.Format("{2} / {3} - {0,3}% - {1} ", n.Progress, n.Rate, fMain.ConvertSize(n.TotalTransferred), fMain.ConvertSize(n.Item.Item.Size));
+                    
+                    var progress = string.Format("{2} / {3} - {0,3}% - {1} ", n.Progress, n.Rate, TransferProgressArgs.ConvertSize(n.TotalTransferred), TransferProgressArgs.ConvertSize(n.Item.Item.Size));
 
                     _transferItem.FileStatusLabel = string.Format(_transferItem.SubTitleFormat, progress);
 

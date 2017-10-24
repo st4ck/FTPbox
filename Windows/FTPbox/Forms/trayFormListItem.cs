@@ -56,5 +56,10 @@ namespace FTPbox.Forms
                     control.Click -= value;
             }
         }
+
+        private void trayFormListItem_Load(object sender, EventArgs e)
+        {
+
+        }
     }
 }
