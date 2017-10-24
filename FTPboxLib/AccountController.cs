@@ -70,11 +70,6 @@ namespace FTPboxLib
             }
         }
 
-        public string WebInterfaceLink
-        {
-            get { return GetHttpLink("webint"); }
-        }
-
         public bool IsAccountSet
         {
             get
@@ -160,7 +155,7 @@ namespace FTPboxLib
             var aName = Common._name(cpath);
 
             var b = !(IgnoreList.IsIgnored(cpath)
-                || cpath.Contains("webint") || aName == "." || aName == ".."                            //web interface, current and parent folders are ignored
+                || aName == "." || aName == ".."                            //web interface, current and parent folders are ignored
                 || aName == ".ftpquota" || aName == "error_log" || aName.StartsWith(".bash")            //server files are ignored
                 || !Common.IsAllowedFilename(aName)                                                     //checks characters not allowed in windows file/folder names
                 || aName.StartsWith(Account.TempFilePrefix)                                             //FTPbox-generated temporary files are ignored

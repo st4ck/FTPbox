@@ -227,12 +227,6 @@ namespace FTPboxLib
                         return Get("/main_form/remove", "Remove");
                     case UiControl.Details:
                         return Get("/main_form/details", "Details");
-                    case UiControl.WebUi:
-                        return Get("/web_interface/web_int", "Web Interface");
-                    case UiControl.UseWebUi:
-                        return Get("/web_interface/use_webint", "Use the Web Interface");
-                    case UiControl.ViewInBrowser:
-                        return Get("/web_interface/view", "(View in browser)");
                     case UiControl.WayOfSync:
                         return Get("/main_form/way_of_sync", "Way of synchronization") + ":";
                     case UiControl.LocalToRemoteSync:

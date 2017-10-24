@@ -34,4 +34,5 @@ DecryptionInfo.cs
 /Windows/.vs/FTPbox/v15/Server/sqlite3/storage.ide-shm
 /Windows/.vs/FTPbox/v15/Server/sqlite3/storage.ide-wal
 /.vs/slnx.sqlite
+/.vs/slnx.sqlite-journal
 /.vs/VSWorkspaceState.json

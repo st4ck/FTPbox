@@ -75,8 +75,6 @@ namespace FTPbox.Forms
                 // List directories first
                 foreach (var d in li.Where(d => d.Type == ClientItemType.Folder))                    
                     {
-                        if (d.Name == "webint") continue;
-
                         var parent = new TreeNode(d.Name);
                         this.Invoke(new MethodInvoker(delegate
                         {

@@ -43,7 +43,7 @@ namespace FTPbox.Forms
         private fTrayForm _fTrayForm;
 
         private TrayTextNotificationArgs _lastTrayStatus = new TrayTextNotificationArgs
-        {AssossiatedFile = null, MessageType = MessageType.AllSynced};
+        { AssossiatedFile = null, MessageType = MessageType.AllSynced };
 
         private Timer _tRetry;
         public bool GotPaths; //if the paths have been set or checked
@@ -55,7 +55,7 @@ namespace FTPbox.Forms
         {
             InitializeComponent();
             PopulateLanguages();
-            
+
         }
 
         private void fMain_Load(object sender, EventArgs e)
@@ -91,10 +91,10 @@ namespace FTPbox.Forms
 
             Notifications.TrayTextNotification += (o, n) => Invoke(new MethodInvoker(() => SetTray(o, n)));
 
-            _fSetup = new Setup {Tag = this};
-            _ftranslate = new Translate {Tag = this};
+            _fSetup = new Setup { Tag = this };
+            _ftranslate = new Translate { Tag = this };
             _fSelective = new fSelectiveSync();
-            _fTrayForm = new fTrayForm {Tag = this};
+            _fTrayForm = new fTrayForm { Tag = this };
 
             if (!string.IsNullOrEmpty(Settings.General.Language))
                 Set_Language(Settings.General.Language);
@@ -104,7 +104,8 @@ namespace FTPbox.Forms
             mainThread.Start();
 
             BackgroundWorker periodicCheck = new BackgroundWorker();
-            periodicCheck.DoWork += new DoWorkEventHandler((o, n) => {
+            periodicCheck.DoWork += new DoWorkEventHandler((o, n) =>
+            {
                 while (true)
                 {
                     Thread.Sleep(300000);
@@ -154,7 +155,7 @@ namespace FTPbox.Forms
             else
             {
                 OfflineMode = true;
-                SetTray(null, new TrayTextNotificationArgs {MessageType = MessageType.Offline});
+                SetTray(null, new TrayTextNotificationArgs { MessageType = MessageType.Offline });
             }
         }
 
@@ -192,7 +193,7 @@ namespace FTPbox.Forms
                     Common.LogError(ex);
 
                     OfflineMode = true;
-                    SetTray(null, new TrayTextNotificationArgs {MessageType = MessageType.Offline});
+                    SetTray(null, new TrayTextNotificationArgs { MessageType = MessageType.Offline });
 
                     _tRetry = new Timer(state => StartUpWork(), null, 30000, 0);
                 }
@@ -368,7 +369,7 @@ namespace FTPbox.Forms
 
                     var json =
                         (Dictionary<string, string>)
-                            JsonConvert.DeserializeObject(e.Result, typeof (Dictionary<string, string>));
+                            JsonConvert.DeserializeObject(e.Result, typeof(Dictionary<string, string>));
                     var version = json["NewVersion"];
 
                     //  Check that the downloaded file has the correct version format, using regex.
@@ -380,7 +381,7 @@ namespace FTPbox.Forms
                         if (version == Application.ProductVersion) return;
 
                         // show dialog box for  download now, learn more and remind me next time
-                        var nvform = new newversion {Tag = this};
+                        var nvform = new newversion { Tag = this };
                         newversion.Newvers = json["NewVersion"];
                         newversion.DownLink = json["DownloadLink"];
                         nvform.ShowDialog();
@@ -483,8 +484,8 @@ namespace FTPbox.Forms
             {
                 Item = new ClientItem
                 {
-                    FullPath = (string) state,
-                    Name = (string) state,
+                    FullPath = (string)state,
+                    Name = (string)state,
                     Type = ClientItemType.Folder,
                     Size = 0x0,
                     LastWriteTime = DateTime.Now
@@ -713,7 +714,7 @@ namespace FTPbox.Forms
                         fswFolders.Dispose();
                     }
                     OfflineMode = true;
-                    SetTray(null, new TrayTextNotificationArgs {MessageType = MessageType.Offline});
+                    SetTray(null, new TrayTextNotificationArgs { MessageType = MessageType.Offline });
                 }
             }
             catch
@@ -1664,45 +1665,40 @@ namespace FTPbox.Forms
         {
             if (string.IsNullOrWhiteSpace(Link)) return;
 
-            if (Link.EndsWith("webint"))
-                Process.Start(Link);
-            else
+            if ((MouseButtons & MouseButtons.Right) != MouseButtons.Right)
             {
-                if ((MouseButtons & MouseButtons.Right) != MouseButtons.Right)
+                if (Settings.General.TrayAction == TrayAction.OpenInBrowser)
                 {
-                    if (Settings.General.TrayAction == TrayAction.OpenInBrowser)
+                    try
                     {
-                        try
-                        {
-                            Process.Start(Program.Account.LinkToRecent());
-                        }
-                        catch
-                        {
-                            //Gotta catch 'em all 
-                        }
+                        Process.Start(Program.Account.LinkToRecent());
                     }
-                    else if (Settings.General.TrayAction == TrayAction.CopyLink)
+                    catch
                     {
-                        try
-                        {
-                            Clipboard.SetText(Program.Account.LinkToRecent());
-                        }
-                        catch
-                        {
-                            //Gotta catch 'em all 
-                        }
-                        SetTray(null, new TrayTextNotificationArgs {MessageType = MessageType.LinkCopied});
+                        //Gotta catch 'em all 
                     }
-                    else
+                }
+                else if (Settings.General.TrayAction == TrayAction.CopyLink)
+                {
+                    try
                     {
-                        try
-                        {
-                            Process.Start(Program.Account.PathToRecent());
-                        }
-                        catch
-                        {
-                            //Gotta catch 'em all
-                        }
+                        Clipboard.SetText(Program.Account.LinkToRecent());
+                    }
+                    catch
+                    {
+                        //Gotta catch 'em all 
+                    }
+                    SetTray(null, new TrayTextNotificationArgs { MessageType = MessageType.LinkCopied });
+                }
+                else
+                {
+                    try
+                    {
+                        Process.Start(Program.Account.PathToRecent());
+                    }
+                    catch
+                    {
+                        //Gotta catch 'em all
                     }
                 }
             }

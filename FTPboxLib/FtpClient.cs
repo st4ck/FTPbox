@@ -776,8 +776,6 @@ namespace FTPboxLib
             }
 
             list.RemoveAll(x => x.Name == "." || x.Name == "..");
-            if (skipIgnored)
-                list.RemoveAll(x => x.FullPath.Contains("webint"));
 
             foreach (var f in list.Where(x => x.Type != ClientItemType.Other))
                 yield return f;
