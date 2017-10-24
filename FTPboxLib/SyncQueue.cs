@@ -14,6 +14,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.IO;
 using System.Linq;
 using System.Threading;
@@ -32,9 +33,14 @@ namespace FTPboxLib
 
         private readonly AccountController _controller;
 
+        public BackgroundWorker sync = new BackgroundWorker();
+
         public SyncQueue(AccountController account)
         {
             _controller = account;
+            sync.DoWork += new DoWorkEventHandler((o, n) => {
+                Run();
+            });
         }
 
         #region Methods : Handle the Queue List
@@ -111,17 +117,13 @@ namespace FTPboxLib
             item.AddedOn = DateTime.Now;
             base.Add(item);
 
-        StartSync:
+            StartSync:
             // Start syncing from the queue
-            StartQueue();
-        }
+            if (!sync.IsBusy)
+                sync.RunWorkerAsync();
+            else
+                Log.Write(l.Error, "Queue already running");
 
-        public void StartQueue()
-        {
-            if (_rcThread != null && _rcThread.IsAlive) return;
-
-            _rcThread = new Thread(Run);
-            _rcThread.Start();
         }
 
         /// <summary>
@@ -129,10 +131,7 @@ namespace FTPboxLib
         /// </summary>
         private void Run()
         {
-            if (Running) return;
-
-            Notifications.ChangeTrayText(MessageType.Syncing);            
-            Running = true;
+            Notifications.ChangeTrayText(MessageType.Syncing);
 
             foreach (var item in Items)
             {
@@ -224,7 +223,6 @@ namespace FTPboxLib
             _controller.LoadLocalFolders();
 
             if (_controller.Account.SyncMethod == SyncMethod.Automatic) SetTimer();
-            Running = false;
         }               
 
         /// <summary>
@@ -689,8 +687,6 @@ namespace FTPboxLib
                     yield return Next;
             }
         }
-
-        public bool Running { get; private set; }
 
         public SyncQueueItem Next { get { return base[0]; } }
 

@@ -452,7 +452,7 @@ namespace FTPbox.Forms
                         break;
                     case MessageType.Listing:
                         cState = 3;
-                        tray.Icon = Resources.AS;
+                        tray.Icon = Resources.syncing;
                         tray.Text = (Program.Account.Account.SyncMethod == SyncMethod.Automatic)
                             ? Common.Languages[MessageType.AllSynced]
                             : Common.Languages[MessageType.Listing];
@@ -1507,7 +1507,7 @@ namespace FTPbox.Forms
 
         private void cManually_CheckedChanged(object sender, EventArgs e)
         {
-            SyncToolStripMenuItem.Enabled = cManually.Checked || !Program.Account.SyncQueue.Running;
+            SyncToolStripMenuItem.Enabled = cManually.Checked || !Program.Account.SyncQueue.sync.IsBusy;
             Program.Account.Account.SyncMethod = (cManually.Checked) ? SyncMethod.Manual : SyncMethod.Automatic;
             Settings.SaveProfile();
 
@@ -1525,7 +1525,7 @@ namespace FTPbox.Forms
 
         private void cAuto_CheckedChanged(object sender, EventArgs e)
         {
-            SyncToolStripMenuItem.Enabled = !cAuto.Checked || !Program.Account.SyncQueue.Running;
+            SyncToolStripMenuItem.Enabled = !cAuto.Checked || !Program.Account.SyncQueue.sync.IsBusy;
             Program.Account.Account.SyncMethod = (!cAuto.Checked) ? SyncMethod.Manual : SyncMethod.Automatic;
             Settings.SaveProfile();
 
