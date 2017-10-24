@@ -68,7 +68,7 @@ namespace FTPbox.Forms
             progressBar1 = new NewProgressBar();
             //progressBar1.Dock = DockStyle.Top;
             progressBar1.Height = 10;
-            progressBar1.Width = 324;
+            progressBar1.Width = 344;
             progressBar1.Margin = new Padding(0);
             progressBar1.Location = new Point(0, 209);
             progressBar1.Visible = false;
@@ -84,7 +84,7 @@ namespace FTPbox.Forms
                 Invoke(new MethodInvoker(() =>
                 {
                     // Get status progress for the transfer
-                    var progress = string.Format("{0,3}% - {1}", n.Progress, n.Rate);
+                    var progress = string.Format("{2} / {3} - {0,3}% - {1} ", n.Progress, n.Rate, fMain.ConvertSize(n.TotalTransferred), fMain.ConvertSize(n.Item.Item.Size));
 
                     _transferItem.FileStatusLabel = string.Format(_transferItem.SubTitleFormat, progress);
 

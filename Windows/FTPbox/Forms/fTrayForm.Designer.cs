@@ -39,7 +39,7 @@
             // lCurrentStatus
             // 
             this.lCurrentStatus.BackColor = System.Drawing.Color.Transparent;
-            this.lCurrentStatus.Location = new System.Drawing.Point(68, 233);
+            this.lCurrentStatus.Location = new System.Drawing.Point(88, 233);
             this.lCurrentStatus.Name = "lCurrentStatus";
             this.lCurrentStatus.Size = new System.Drawing.Size(250, 13);
             this.lCurrentStatus.TabIndex = 1;
@@ -52,7 +52,7 @@
             this.fRecentList.BackColor = System.Drawing.Color.White;
             this.fRecentList.Location = new System.Drawing.Point(0, 0);
             this.fRecentList.Name = "fRecentList";
-            this.fRecentList.Size = new System.Drawing.Size(324, 219);
+            this.fRecentList.Size = new System.Drawing.Size(344, 219);
             this.fRecentList.TabIndex = 2;
             // 
             // pLocalFolder
@@ -87,15 +87,15 @@
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(324, 261);
+            this.ClientSize = new System.Drawing.Size(344, 261);
             this.ControlBox = false;
             this.Controls.Add(this.pSettings);
             this.Controls.Add(this.pLocalFolder);
             this.Controls.Add(this.fRecentList);
             this.Controls.Add(this.lCurrentStatus);
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedSingle;
-            this.MaximumSize = new System.Drawing.Size(330, 267);
-            this.MinimumSize = new System.Drawing.Size(330, 267);
+            this.MaximumSize = new System.Drawing.Size(350, 267);
+            this.MinimumSize = new System.Drawing.Size(350, 267);
             this.Name = "fTrayForm";
             this.ShowIcon = false;
             this.ShowInTaskbar = false;
