@@ -63,7 +63,8 @@ namespace FTPbox.Forms
             // hide config window at startup
             BeginInvoke(new MethodInvoker(delegate
             {
-                Hide();
+                if (Program.Account.IsAccountSet)
+                    Hide();
             }));
 
             NetworkChange.NetworkAddressChanged += OnNetworkChange;
