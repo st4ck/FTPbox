@@ -39,6 +39,8 @@ namespace FTPboxLib
 
         private static readonly List<LogItem> LogQueue = new List<LogItem>();
 
+        private static Object lockQueue = new Object();
+
         private static string _fname;
         private static l _level;
         public static bool DebugEnabled;
@@ -108,12 +110,15 @@ namespace FTPboxLib
         {
             while (true)
             {
-                if (LogQueue.Count > 0)
+                lock (lockQueue)
                 {
-                    OutputLog(0);
-                    while (!LogQueue[0].IsDone)
-                        Thread.Sleep(5);
-                    LogQueue.RemoveAt(0);
+                    if (LogQueue.Count > 0)
+                    {
+                        OutputLog(0);
+                        while (!LogQueue[0].IsDone)
+                            Thread.Sleep(5);
+                        LogQueue.RemoveAt(0);
+                    }
                 }
                 Thread.Sleep(5);
             }
@@ -122,7 +127,10 @@ namespace FTPboxLib
         private static void FinalLog(l level, string caller, string text)
         {
             var lItem = new LogItem(level, caller, text);
-            LogQueue.Add(lItem);
+            lock (lockQueue)
+            {
+                LogQueue.Add(lItem);
+            }
         }
 
         private static void OutputLog(int iIndex)
