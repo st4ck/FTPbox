@@ -250,15 +250,6 @@ namespace FTPboxLib
             if (_tKeepAlive != null) _tKeepAlive.Change(0, 0);
         }
 
-        public void Upload(string localpath, string remotepath)
-        {
-
-            using (var file = File.OpenRead(localpath)) lock (ftpcLock)
-                {
-                    _sftpc.UploadFile(file, remotepath, true);
-                }
-        }
-
         /// <summary>
         ///     Upload to a temporary file.
         ///     If the transfer is successful, replace the old file with the temporary one.
@@ -299,6 +290,8 @@ namespace FTPboxLib
                                 startedOn));
                             transfered = (long)d;
                         });
+
+                        Notifications.ChangeTrayText(MessageType.Size, null, i.Item.Size);
                     }
             }
             catch (Exception ex)
@@ -427,7 +420,9 @@ namespace FTPboxLib
 
             lock (ftpcLock)
             {
+                var removedSpace = SizeOf(cpath);
                 _sftpc.Delete(cpath);
+                Notifications.ChangeTrayText(MessageType.Size, null, -1 * removedSpace);
             }
         }
 

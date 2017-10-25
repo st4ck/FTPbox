@@ -270,33 +270,6 @@ namespace FTPboxLib
             if (_tKeepAlive != null) _tKeepAlive.Change(0, 0);
         }
 
-        public void Upload(string localpath, string remotepath)
-        {
-
-            lock (ftpcLock)
-            {
-                using (Stream file = File.OpenRead(localpath),
-                rem = _ftpc.OpenWrite(remotepath))
-                {
-                    var buf = new byte[8192];
-                    int read;
-                    long total = 0;
-
-
-                    while ((read = file.Read(buf, 0, buf.Length)) > 0)
-                    {
-                        rem.Write(buf, 0, read);
-                        total += read;
-
-                        Console.WriteLine("{0}/{1} {2:p}",
-                            total, file.Length,
-                            total / (double)file.Length);
-                    }
-                }
-            }
-
-        }
-
         /// <summary>
         ///     Upload to a temporary file.
         ///     If the transfer is successful, replace the old file with the temporary one.
@@ -344,6 +317,8 @@ namespace FTPboxLib
 
                             ThrottleTransfer(Settings.General.UploadLimit, transfered, startedOn);
                         }
+
+                        Notifications.ChangeTrayText(MessageType.Size, null, i.Item.Size);
                     }
                 }
 
@@ -499,7 +474,9 @@ namespace FTPboxLib
             {
                 lock (ftpcLock)
                 {
+                    var removedSpace = SizeOf(cpath);
                     _ftpc.DeleteFile(cpath);
+                    Notifications.ChangeTrayText(MessageType.Size, null, -1 * removedSpace);
                 }
             }
             catch (Exception) { }

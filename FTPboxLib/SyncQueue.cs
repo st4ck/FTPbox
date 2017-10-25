@@ -341,7 +341,7 @@ namespace FTPboxLib
 
             remoteFilesList = remoteFilesList.ConvertAll(x => _controller.GetCommonPath(x, false));
 
-            Notifications.ChangeTrayText(MessageType.Size, null, TransferProgressArgs.ConvertSize(globalSize));
+            Notifications.ChangeTrayText(MessageType.Size, null, globalSize);
 
             Notifications.ChangeTrayText(MessageType.Syncing);
 

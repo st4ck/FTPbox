@@ -11,6 +11,11 @@ namespace FTPbox.Forms
     public partial class fTrayForm : Form
     {
         /// <summary>
+        ///     Contains the space occupied on the remote server
+        /// </summary>
+        private long remoteTotalSize = 0;
+
+        /// <summary>
         ///     This item will be added to the recent list when a file transfer is in progress
         /// </summary>
         private readonly trayFormListItem _transferItem = new trayFormListItem();
@@ -21,7 +26,7 @@ namespace FTPbox.Forms
         private TrayTextNotificationArgs _lastStatus = new TrayTextNotificationArgs
         {
             AssossiatedFile = null,
-            sizeValue = "0",
+            sizeValue = 0,
             MessageType = MessageType.AllSynced
         };
 
@@ -176,7 +181,8 @@ namespace FTPbox.Forms
                             : Common.Languages[MessageType.Listing];
                         break;
                     case MessageType.Size:
-                        lSize.Text = "Spazio occupato " + e.sizeValue;
+                        remoteTotalSize += e.sizeValue;
+                        lSize.Text = "Spazio occupato " + TransferProgressArgs.ConvertSize(remoteTotalSize);
                         break;
                     default:
                         lCurrentStatus.Text = Common.Languages[e.MessageType];
