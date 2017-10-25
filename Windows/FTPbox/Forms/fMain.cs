@@ -35,7 +35,6 @@ namespace FTPbox.Forms
 {
     public partial class fMain : Form
     {
-        private bool _changedfromcheck = true;
         private fSelectiveSync _fSelective;
         //Form instances
         private Setup _fSetup;
@@ -291,8 +290,6 @@ namespace FTPbox.Forms
             SyncToolStripMenuItem.Enabled = !OfflineMode;
 
             if (OfflineMode || !GotPaths) return;
-
-            _changedfromcheck = false;
 
             Program.Account.FolderWatcher.Setup();
 
@@ -710,8 +707,6 @@ namespace FTPbox.Forms
                     if (!OfflineMode)
                     {
                         Program.Account.Client.Disconnect();
-                        fswFiles.Dispose();
-                        fswFolders.Dispose();
                     }
                     OfflineMode = true;
                     SetTray(null, new TrayTextNotificationArgs { MessageType = MessageType.Offline });

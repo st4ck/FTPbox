@@ -57,7 +57,6 @@
     <Compile Include="Helpers\FtpListParser.cs" />
     <Compile Include="Helpers\FtpReply.cs" />
     <Compile Include="Helpers\FtpTrace.cs" />
-    <Compile Include="Helpers\IntRef.cs" />
     <Compile Include="Proxy\FtpClientHttp11Proxy.cs" />
     <Compile Include="Proxy\FtpClientProxy.cs" />
     <Compile Include="Proxy\FtpClientUserAtHostProxy.cs" />
