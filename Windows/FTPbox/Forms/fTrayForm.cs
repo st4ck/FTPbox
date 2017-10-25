@@ -182,15 +182,13 @@ namespace FTPbox.Forms
                         break;
                     case MessageType.Size:
                         remoteTotalSize += e.sizeValue;
+                        if (remoteTotalSize < 0) remoteTotalSize = 0;
                         lSize.Text = "Spazio occupato " + TransferProgressArgs.ConvertSize(remoteTotalSize);
                         break;
                     default:
                         lCurrentStatus.Text = Common.Languages[e.MessageType];
                         break;
                 }
-                // Remove 'FTPbox - ' from the beginning of the label
-                if (lCurrentStatus.Text.StartsWith("FTPbox - "))
-                    lCurrentStatus.Text = lCurrentStatus.Text.Substring("FTPbox - ".Length);
             }
             catch (Exception ex)
             {

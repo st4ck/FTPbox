@@ -257,7 +257,7 @@ namespace FTPbox.Forms
 
             //  About Tab       //
 
-            lVersion.Text = Application.ProductVersion.Substring(0, 5) + @" Beta";
+            lVersion.Text = Application.ProductVersion.Substring(0, 5);
 
             //   Filters Tab    //
 

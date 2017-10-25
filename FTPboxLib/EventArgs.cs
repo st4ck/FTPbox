@@ -101,6 +101,10 @@ namespace FTPboxLib
             }
         }
 
+        /// <summary>
+        /// Convert file size to human readable format with size unit
+        /// </summary>
+        /// <param name="len">file size in byte</param>
         public static string ConvertSize(double len)
         {
             string[] sizes = { "B", "kB", "MB", "GB", "TB", "PB", "EB" };
