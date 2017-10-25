@@ -183,7 +183,7 @@ namespace FTPbox.Forms
                     case MessageType.Size:
                         remoteTotalSize += e.sizeValue;
                         if (remoteTotalSize < 0) remoteTotalSize = 0;
-                        lSize.Text = "Spazio occupato " + TransferProgressArgs.ConvertSize(remoteTotalSize);
+                        lSize.Text = Common.Languages[MessageType.Size] + " " + TransferProgressArgs.ConvertSize(remoteTotalSize);
                         break;
                     default:
                         lCurrentStatus.Text = Common.Languages[e.MessageType];

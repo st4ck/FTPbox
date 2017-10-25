@@ -65,25 +65,27 @@ namespace FTPboxLib
                     case MessageType.LinkCopied:
                         return Get("/tray/link_copied", "Link copied to clipboard");
                     case MessageType.Connecting:
-                        return Get("/tray/connecting", "FTPbox - Connecting...");
+                        return Get("/tray/connecting", "Connecting...");
                     case MessageType.Disconnected:
-                        return Get("/tray/disconnected", "FTPbox - Disconnected");
+                        return Get("/tray/disconnected", "Disconnected");
                     case MessageType.Reconnecting:
-                        return Get("/tray/reconnecting", "FTPbox - Re-Connecting...");
+                        return Get("/tray/reconnecting", "Re-Connecting...");
                     case MessageType.Listing:
-                        return Get("/tray/listing", "FTPbox - Listing...");
+                        return Get("/tray/listing", "Listing...");
                     case MessageType.Uploading:
                         return Get("/tray/uploading", "Uploading {0}");
                     case MessageType.Downloading:
                         return Get("/tray/downloading", "Downloading {0}");
                     case MessageType.Syncing:
-                        return Get("/tray/syncing", "FTPbox - Syncing");
+                        return Get("/tray/syncing", "Syncing");
                     case MessageType.AllSynced:
-                        return Get("/tray/synced", "FTPbox - All files synced");
+                        return Get("/tray/synced", "All files synced");
                     case MessageType.Offline:
-                        return Get("/tray/offline", "FTPbox - Offline");
+                        return Get("/tray/offline", "Offline");
                     case MessageType.Ready:
-                        return Get("/tray/ready", "FTPbox - Ready");
+                        return Get("/tray/ready", "Ready");
+                    case MessageType.Size:
+                        return Get("/tray/size", "Space occupied");
                     case MessageType.Nothing:
                         return "FTPbox";
                     case MessageType.NotAvailable:
