@@ -41,10 +41,12 @@ namespace FTPbox.Forms
         private Translate _ftranslate;
         private fTrayForm _fTrayForm;
 
+        private BackgroundWorker mainWorker;
+
         private TrayTextNotificationArgs _lastTrayStatus = new TrayTextNotificationArgs
         { AssossiatedFile = null, MessageType = MessageType.AllSynced };
 
-        private Timer _tRetry;
+        private Timer _tRetry = null;
         public bool GotPaths; //if the paths have been set or checked
         //Links
         public string Link = string.Empty; //The web link of the last-changed file
@@ -98,9 +100,13 @@ namespace FTPbox.Forms
             if (!string.IsNullOrEmpty(Settings.General.Language))
                 Set_Language(Settings.General.Language);
 
-            Thread mainThread = new Thread(StartUpWork);
+            /*Thread mainThread = new Thread(StartUpWork);
             mainThread.SetApartmentState(ApartmentState.STA);
-            mainThread.Start();
+            mainThread.Start();*/
+            mainWorker = new BackgroundWorker();
+            mainWorker.DoWork += StartUpWork;
+            mainWorker.RunWorkerCompleted += StartUpCompleted;
+            mainWorker.RunWorkerAsync();
 
             BackgroundWorker periodicCheck = new BackgroundWorker();
             periodicCheck.DoWork += new DoWorkEventHandler((o, n) =>
@@ -111,7 +117,7 @@ namespace FTPbox.Forms
 
                     if (ConnectedToInternet() && IsReady())
                     {
-                        StartUpWork();
+                        //StartUpWork();
                     }
                 }
             });
@@ -121,35 +127,51 @@ namespace FTPbox.Forms
             //CheckForUpdate();
         }
 
+        private void StartUpCompleted(object sender, RunWorkerCompletedEventArgs e)
+        {
+            if (e.Error != null)
+            {
+                if (e.Error.GetType() == typeof(ConnectionFailedException))
+                {
+                    OfflineMode = true;
+                    _tRetry = new Timer(state => mainWorker.RunWorkerAsync(), null, 30000, 0);
+                }
+            }
+        }
+
         /// <summary>
         ///     Work done at the application startup.
         ///     Checks the saved account info, updates the form controls and starts syncing if syncing is automatic.
         ///     If there's no internet connection, puts the program to offline mode.
         /// </summary>
-        private void StartUpWork()
+        private void StartUpWork(object sender, DoWorkEventArgs e)
         {
             Log.Write(l.Debug, "Internet connection available: {0}", ConnectedToInternet().ToString());
-            OfflineMode = false;
+
+            Notifications.ChangeTrayText(MessageType.NullSize);
+            //why?!
+            //OfflineMode = false;
 
             if (ConnectedToInternet())
             {
-                CheckAccount();
+                    CheckAccount();
 
-                Invoke(new MethodInvoker(UpdateDetails));
+                    Invoke(new MethodInvoker(UpdateDetails));
 
-                if (OfflineMode) return;
+                    if (OfflineMode) return;
 
-                Log.Write(l.Debug, "Account: OK");
+                    Log.Write(l.Debug, "Account: OK");
 
-                CheckPaths();
-                Log.Write(l.Debug, "Paths: OK");
+                    CheckPaths();
+                    Log.Write(l.Debug, "Paths: OK");
 
-                Invoke(new MethodInvoker(UpdateDetails));
+                    Invoke(new MethodInvoker(UpdateDetails));
 
-                if (!Settings.IsNoMenusMode)
-                {
-                    RunServer();
-                }
+                    if (!Settings.IsNoMenusMode)
+                    {
+                        RunServer();
+                    }
+                
             }
             else
             {
@@ -194,7 +216,7 @@ namespace FTPbox.Forms
                     OfflineMode = true;
                     SetTray(null, new TrayTextNotificationArgs { MessageType = MessageType.Offline });
 
-                    _tRetry = new Timer(state => StartUpWork(), null, 30000, 0);
+                    throw (new ConnectionFailedException());
                 }
         }
 
@@ -692,14 +714,20 @@ namespace FTPbox.Forms
         {
             try
             {
-                if (NetworkInterface.GetIsNetworkAvailable())
+                // true everytime if you've an interface up, so removed
+                //if (NetworkInterface.GetIsNetworkAvailable())
+
+                if (ConnectedToInternet())
                 {
                     if (OfflineMode)
                     {
                         while (!ConnectedToInternet())
                             Thread.Sleep(5000);
-                        StartUpWork();
+                        while (mainWorker.IsBusy);
+                        if (!mainWorker.IsBusy)
+                            mainWorker.RunWorkerAsync();
                     }
+
                     OfflineMode = false;
                 }
                 else

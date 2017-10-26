@@ -58,6 +58,7 @@
     <Reference Include="System.Xml.Linq" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Forms\ConnectionFailedException.cs" />
     <Compile Include="Forms\fAccountDetails.cs">
       <SubType>Form</SubType>
     </Compile>

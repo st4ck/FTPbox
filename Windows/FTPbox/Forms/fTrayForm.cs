@@ -185,6 +185,9 @@ namespace FTPbox.Forms
                         if (remoteTotalSize < 0) remoteTotalSize = 0;
                         lSize.Text = Common.Languages[MessageType.Size] + " " + TransferProgressArgs.ConvertSize(remoteTotalSize);
                         break;
+                    case MessageType.NullSize:
+                        lSize.Text = "";
+                        break;
                     default:
                         lCurrentStatus.Text = Common.Languages[e.MessageType];
                         break;
