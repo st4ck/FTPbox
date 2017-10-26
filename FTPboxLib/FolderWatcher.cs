@@ -29,7 +29,7 @@ namespace FTPboxLib
         /// <summary>
         /// Sets the file watcher for the local directory.
         /// </summary>
-        public void Setup()
+        public void Setup(bool autostart = false)
         {
             Log.Write(l.Debug, "Setting up the file system watcher");
 
@@ -48,7 +48,7 @@ namespace FTPboxLib
             _fsWatcher.Renamed += OnRenamed;
 
             // Start watching
-            _fsWatcher.EnableRaisingEvents = true;
+            _fsWatcher.EnableRaisingEvents = autostart;
 
             Log.Write(l.Debug, "Ready.");
         }

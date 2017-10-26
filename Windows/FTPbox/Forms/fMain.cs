@@ -109,6 +109,7 @@ namespace FTPbox.Forms
 
             listingWorker = new BackgroundWorker();
             listingWorker.DoWork += StartListing;
+            listingWorker.RunWorkerCompleted += ListingCompleted;
 
             mainWorker = new BackgroundWorker();
             mainWorker.DoWork += StartUpWork;
@@ -118,9 +119,16 @@ namespace FTPbox.Forms
             //CheckForUpdate();
         }
 
+        private void ListingCompleted(object sender, RunWorkerCompletedEventArgs e)
+        {
+            Program.Account.FolderWatcher.Resume();
+        }
+
         private void StartListing(object sender, DoWorkEventArgs e)
         {
             //Program.Account.SyncQueue = new SyncQueue(Program.Account);
+
+            Program.Account.FolderWatcher.Pause();
 
             var cpath = Program.Account.GetCommonPath(Program.Account.Paths.Local, true);
             Program.Account.SyncQueue.Add(new SyncQueueItem(Program.Account)
@@ -173,6 +181,9 @@ namespace FTPbox.Forms
                 Log.Write(l.Debug, "Paths: OK");
 
                 Invoke(new MethodInvoker(UpdateDetails));
+
+                Program.Account.FolderWatcher.Setup();
+
                 StartListingAndWatching();
 
                 if ((!Settings.IsNoMenusMode) && !(serverWorker.IsBusy))
@@ -189,8 +200,6 @@ namespace FTPbox.Forms
         private void StartListingAndWatching()
         {
             if (OfflineMode || !GotPaths) return;
-
-            Program.Account.FolderWatcher.Setup();
 
             if (listingWorker.IsBusy)
             {
