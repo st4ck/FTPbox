@@ -158,26 +158,6 @@ namespace FTPboxLib
             {
                 if (!string.IsNullOrWhiteSpace(_controller.Paths.Remote) && !_controller.Paths.Remote.Equals("/"))
                     WorkingDirectory = _controller.Paths.Remote;
-
-                if (connectionState == null)
-                {
-                    connectionState = new BackgroundWorker();
-                    connectionState.DoWork += new DoWorkEventHandler((o, e) =>
-                    {
-                        while (true)
-                        {
-                            if (!isConnected)
-                            {
-                                // RECONNECT
-                                //_controller.Client.Reconnect();
-                            }
-                            Thread.Sleep(5000);
-                        }
-                    });
-
-                    connectionState.RunWorkerAsync();
-                }
-
             }
 
             Log.Write(l.Debug, "Client connected sucessfully");

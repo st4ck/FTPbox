@@ -42,6 +42,7 @@ namespace FTPbox.Forms
         private fTrayForm _fTrayForm;
 
         private BackgroundWorker mainWorker;
+        private BackgroundWorker serverWorker;
 
         private TrayTextNotificationArgs _lastTrayStatus = new TrayTextNotificationArgs
         { AssossiatedFile = null, MessageType = MessageType.AllSynced };
@@ -103,26 +104,15 @@ namespace FTPbox.Forms
             /*Thread mainThread = new Thread(StartUpWork);
             mainThread.SetApartmentState(ApartmentState.STA);
             mainThread.Start();*/
+
+            serverWorker = new BackgroundWorker();
+            serverWorker.DoWork += ServerThread;
+            serverWorker.RunWorkerCompleted += RunServerCompleted;
+
             mainWorker = new BackgroundWorker();
             mainWorker.DoWork += StartUpWork;
             mainWorker.RunWorkerCompleted += StartUpCompleted;
             mainWorker.RunWorkerAsync();
-
-            BackgroundWorker periodicCheck = new BackgroundWorker();
-            periodicCheck.DoWork += new DoWorkEventHandler((o, n) =>
-            {
-                while (true)
-                {
-                    Thread.Sleep(300000);
-
-                    if (ConnectedToInternet() && IsReady())
-                    {
-                        //StartUpWork();
-                    }
-                }
-            });
-            // RECONNECT
-            //periodicCheck.RunWorkerAsync();
 
             //CheckForUpdate();
         }
@@ -167,10 +157,8 @@ namespace FTPbox.Forms
 
                     Invoke(new MethodInvoker(UpdateDetails));
 
-                    if (!Settings.IsNoMenusMode)
-                    {
-                        RunServer();
-                    }
+                    if ((!Settings.IsNoMenusMode) && !(serverWorker.IsBusy))
+                        serverWorker.RunWorkerAsync();
                 
             }
             else
@@ -1075,38 +1063,12 @@ namespace FTPbox.Forms
             return appliesTo;
         }
 
-        private void RunServer()
+        private void RunServerCompleted(object sender, RunWorkerCompletedEventArgs e)
         {
-            var tServer = new Thread(RunServerThread);
-            tServer.SetApartmentState(ApartmentState.STA);
-            tServer.Start();
+            serverWorker.RunWorkerAsync();
         }
 
-        private void RunServerThread()
-        {
-            var i = 1;
-            Log.Write(l.Client, "Started the named-pipe server, waiting for clients (if any)");
-
-            var server = new Thread(ServerThread);
-            server.SetApartmentState(ApartmentState.STA);
-            server.Start();
-
-            Thread.Sleep(250);
-
-            while (i > 0)
-                if (server != null)
-                    if (server.Join(250))
-                    {
-                        Log.Write(l.Client, "named-pipe server thread finished");
-                        server = null;
-                        i--;
-                    }
-            Log.Write(l.Client, "named-pipe server thread exiting...");
-
-            RunServer();
-        }
-
-        public void ServerThread()
+        public void ServerThread(object sender, DoWorkEventArgs e)
         {
             var pipeServer = new NamedPipeServerStream("FTPbox Server", PipeDirection.InOut, 5);
             var threadID = Thread.CurrentThread.ManagedThreadId;
@@ -1131,9 +1093,9 @@ namespace FTPbox.Forms
 
                 pipeServer.RunAsClient(fReader.Start);
             }
-            catch (IOException e)
+            catch (IOException ex)
             {
-                Common.LogError(e);
+                Common.LogError(ex);
             }
             pipeServer.Close();
         }
