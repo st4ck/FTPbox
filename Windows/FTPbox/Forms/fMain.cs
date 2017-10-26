@@ -43,11 +43,13 @@ namespace FTPbox.Forms
 
         private BackgroundWorker mainWorker;
         private BackgroundWorker serverWorker;
+        private BackgroundWorker listingWorker;
 
         private TrayTextNotificationArgs _lastTrayStatus = new TrayTextNotificationArgs
         { AssossiatedFile = null, MessageType = MessageType.AllSynced };
 
         private Timer _tRetry = null;
+        private Timer _tServer = null;
         public bool GotPaths; //if the paths have been set or checked
         //Links
         public string Link = string.Empty; //The web link of the last-changed file
@@ -101,13 +103,12 @@ namespace FTPbox.Forms
             if (!string.IsNullOrEmpty(Settings.General.Language))
                 Set_Language(Settings.General.Language);
 
-            /*Thread mainThread = new Thread(StartUpWork);
-            mainThread.SetApartmentState(ApartmentState.STA);
-            mainThread.Start();*/
-
             serverWorker = new BackgroundWorker();
-            serverWorker.DoWork += ServerThread;
+            serverWorker.DoWork += PipeServer;
             serverWorker.RunWorkerCompleted += RunServerCompleted;
+
+            listingWorker = new BackgroundWorker();
+            listingWorker.DoWork += StartListing;
 
             mainWorker = new BackgroundWorker();
             mainWorker.DoWork += StartUpWork;
@@ -115,6 +116,26 @@ namespace FTPbox.Forms
             mainWorker.RunWorkerAsync();
 
             //CheckForUpdate();
+        }
+
+        private void StartListing(object sender, DoWorkEventArgs e)
+        {
+            //Program.Account.SyncQueue = new SyncQueue(Program.Account);
+
+            var cpath = Program.Account.GetCommonPath(Program.Account.Paths.Local, true);
+            Program.Account.SyncQueue.Add(new SyncQueueItem(Program.Account)
+            {
+                Item = new ClientItem
+                {
+                    FullPath = Program.Account.Paths.Local,
+                    Name = Common._name(cpath),
+                    Type = ClientItemType.Folder,
+                    Size = 0x0,
+                    LastWriteTime = DateTime.MinValue
+                },
+                ActionType = ChangeAction.changed,
+                SyncTo = SyncTo.Remote
+            });
         }
 
         private void StartUpCompleted(object sender, RunWorkerCompletedEventArgs e)
@@ -144,28 +165,40 @@ namespace FTPbox.Forms
 
             if (ConnectedToInternet())
             {
-                    CheckAccount();
+                CheckAccount();
 
-                    Invoke(new MethodInvoker(UpdateDetails));
+                Invoke(new MethodInvoker(UpdateDetails));
+                Log.Write(l.Debug, "Account: OK");
+                CheckPaths();
+                Log.Write(l.Debug, "Paths: OK");
 
-                    if (OfflineMode) return;
+                Invoke(new MethodInvoker(UpdateDetails));
+                StartListingAndWatching();
 
-                    Log.Write(l.Debug, "Account: OK");
+                if ((!Settings.IsNoMenusMode) && !(serverWorker.IsBusy))
+                    serverWorker.RunWorkerAsync();
 
-                    CheckPaths();
-                    Log.Write(l.Debug, "Paths: OK");
-
-                    Invoke(new MethodInvoker(UpdateDetails));
-
-                    if ((!Settings.IsNoMenusMode) && !(serverWorker.IsBusy))
-                        serverWorker.RunWorkerAsync();
-                
             }
             else
             {
                 OfflineMode = true;
                 SetTray(null, new TrayTextNotificationArgs { MessageType = MessageType.Offline });
             }
+        }
+
+        private void StartListingAndWatching()
+        {
+            if (OfflineMode || !GotPaths) return;
+
+            Program.Account.FolderWatcher.Setup();
+
+            if (listingWorker.IsBusy)
+            {
+                listingWorker.CancelAsync();
+                while (listingWorker.IsBusy);
+            }
+
+            listingWorker.RunWorkerAsync();
         }
 
         /// <summary>
@@ -191,8 +224,8 @@ namespace FTPbox.Forms
 
                     Invoke(new MethodInvoker(() =>
                     {
-                        ShowInTaskbar = false;
-                        Hide();
+                        /*ShowInTaskbar = false;
+                        Hide();*/
                         ShowInTaskbar = true;
                     }));
                 }
@@ -298,30 +331,6 @@ namespace FTPbox.Forms
 
             // Disable the following in offline mode
             SyncToolStripMenuItem.Enabled = !OfflineMode;
-
-            if (OfflineMode || !GotPaths) return;
-
-            Program.Account.FolderWatcher.Setup();
-
-            // in a separate thread...
-            new Thread(() =>
-            {
-                // ...check local folder for changes
-                var cpath = Program.Account.GetCommonPath(Program.Account.Paths.Local, true);
-                Program.Account.SyncQueue.Add(new SyncQueueItem(Program.Account)
-                {
-                    Item = new ClientItem
-                    {
-                        FullPath = Program.Account.Paths.Local,
-                        Name = Common._name(cpath),
-                        Type = ClientItemType.Folder,
-                        Size = 0x0,
-                        LastWriteTime = DateTime.MinValue
-                    },
-                    ActionType = ChangeAction.changed,
-                    SyncTo = SyncTo.Remote
-                });
-            }).Start();
         }
 
         /// <summary>
@@ -711,9 +720,13 @@ namespace FTPbox.Forms
                     {
                         while (!ConnectedToInternet())
                             Thread.Sleep(5000);
-                        while (mainWorker.IsBusy);
+                        while (mainWorker.IsBusy) ;
                         if (!mainWorker.IsBusy)
+                        {
+                            //reset path
+                            Program.Account.Client.WorkingDirectory = Program.Account.Paths.Remote;
                             mainWorker.RunWorkerAsync();
+                        }
                     }
 
                     OfflineMode = false;
@@ -1065,10 +1078,11 @@ namespace FTPbox.Forms
 
         private void RunServerCompleted(object sender, RunWorkerCompletedEventArgs e)
         {
+            //_tRetry = new Timer(state => mainWorker.RunWorkerAsync(), null, 30000, 0);
             serverWorker.RunWorkerAsync();
         }
 
-        public void ServerThread(object sender, DoWorkEventArgs e)
+        public void PipeServer(object sender, DoWorkEventArgs e)
         {
             var pipeServer = new NamedPipeServerStream("FTPbox Server", PipeDirection.InOut, 5);
             var threadID = Thread.CurrentThread.ManagedThreadId;

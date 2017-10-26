@@ -716,20 +716,31 @@ namespace FTPboxLib
             ListingFailed = false;
             UnsetKeepAlive();
 
-            List<ClientItem> list;
+            List<ClientItem> list = new List<ClientItem>();
 
-            try
+            lock (ftpcLock)
             {
-                lock (ftpcLock)
+                bool ok = false;
+
+                while (!ok)
                 {
-                    list = Array.ConvertAll(new List<FtpListItem>(_ftpc.GetListing(cpath, FtpListOption.Size)).ToArray(), ConvertItem).ToList();
+                    try
+                    {
+                        _controller.Client.WorkingDirectory = _controller.Paths.Remote;
+                        var Listed = _ftpc.GetListing(cpath, FtpListOption.Size);
+                        list = Array.ConvertAll(new List<FtpListItem>(Listed).ToArray(), ConvertItem).ToList();
+                        ok = true;
+                    }
+                    catch (TimeoutException ex)
+                    {
+                        Common.LogError(ex);
+                    }
+                    catch (Exception ex)
+                    {
+                        Common.LogError(ex);
+                        yield break;
+                    }
                 }
-            }
-            catch (Exception ex)
-            {
-                Common.LogError(ex);
-                ListingFailed = true;
-                yield break;
             }
 
             list.RemoveAll(x => x.Name == "." || x.Name == "..");

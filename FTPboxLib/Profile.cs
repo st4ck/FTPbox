@@ -33,7 +33,8 @@ namespace FTPboxLib
 
 	    #region Properties
 
-        public string HomePath { get; set; }
+        public string HomePath { get;
+            set; }
 
         public bool AskForPassword = false;
 
