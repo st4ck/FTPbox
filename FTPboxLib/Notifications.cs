@@ -114,9 +114,9 @@ namespace FTPboxLib
         /// </summary>
         /// <param name="m"></param>
         /// <param name="name"></param>
-        public static void ChangeTrayText(MessageType m, string name = null, long size = 0)
+        public static void ChangeTrayText(MessageType m, string name = null, long size = 0, string custom = null)
         {
-            var args = new TrayTextNotificationArgs { AssossiatedFile = name, MessageType = m, sizeValue = size };
+            var args = new TrayTextNotificationArgs { AssossiatedFile = name, MessageType = m, sizeValue = size, customString = custom };
             TrayTextNotification.SafeInvoke(null, args);
         }
 

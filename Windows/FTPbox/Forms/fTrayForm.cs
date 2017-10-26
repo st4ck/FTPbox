@@ -27,6 +27,7 @@ namespace FTPbox.Forms
         {
             AssossiatedFile = null,
             sizeValue = 0,
+            customString = null,
             MessageType = MessageType.AllSynced
         };
 
@@ -188,6 +189,11 @@ namespace FTPbox.Forms
                     case MessageType.NullSize:
                         remoteTotalSize = 0;
                         lSize.Text = "";
+                        break;
+                    case MessageType.Scanning:
+                        if (e.customString.Length > 40)
+                            e.customString = "..." + e.customString.Substring(e.customString.Length-40, 40);
+                        lSize.Text = e.customString;
                         break;
                     default:
                         lCurrentStatus.Text = Common.Languages[e.MessageType];

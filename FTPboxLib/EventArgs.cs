@@ -50,10 +50,10 @@ namespace FTPboxLib
 
     public class TrayTextNotificationArgs : EventArgs
     {
-        //TODO:  Fix that shit
         public MessageType MessageType;
         public string AssossiatedFile;
         public long sizeValue;
+        public string customString;
     }
 
     // EventArgs for transfer progress
