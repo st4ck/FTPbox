@@ -726,7 +726,9 @@ namespace FTPboxLib
                 {
                     try
                     {
-                        _controller.Client.WorkingDirectory = _controller.Paths.Remote;
+                        if (_controller.Client.WorkingDirectory.CompareTo(_controller.Paths.Remote) != 0)
+                            _controller.Client.WorkingDirectory = _controller.Paths.Remote;
+
                         Notifications.ChangeTrayText(MessageType.Scanning, null, 0, cpath);
                         var Listed = _ftpc.GetListing(cpath, FtpListOption.Size);
                         list = Array.ConvertAll(new List<FtpListItem>(Listed).ToArray(), ConvertItem).ToList();
