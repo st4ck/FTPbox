@@ -3,6 +3,7 @@ using System.Drawing;
 using System.Linq;
 using System.Windows.Forms;
 using FTPboxLib;
+using System.Threading;
 
 namespace FTPbox.Forms
 {
@@ -13,6 +14,8 @@ namespace FTPbox.Forms
         private AccountSetupTab _prevTab = AccountSetupTab.None;
         private AccountSetupTab _currentTab;
         private readonly AccountSetupTab _initialTab;
+
+        private Thread folderBrowserThread;
 
         private readonly FolderBrowserDialog _fbd = new FolderBrowserDialog() { RootFolder = Environment.SpecialFolder.Desktop, ShowNewFolderButton = true };
 
@@ -39,6 +42,30 @@ namespace FTPbox.Forms
             labKeyPath.Text = string.Empty;
             cEncryption.SelectedIndex = 0;
             cMode.SelectedIndex = 0;
+
+            newFolderBrowserThread();
+
+            
+        }
+
+        private void newFolderBrowserThread()
+        {
+            folderBrowserThread = new Thread(new ParameterizedThreadStart(param =>
+            {
+                _fbd.ShowDialog();
+                if (_fbd.SelectedPath != string.Empty)
+                    Invoke(new MethodInvoker(() => { tLocalPath.Text = _fbd.SelectedPath; }));
+            }));
+            folderBrowserThread.SetApartmentState(ApartmentState.STA);
+        }
+
+        private void bBrowse_Click(object sender, EventArgs e)
+        {
+            if (!folderBrowserThread.IsAlive)
+            {
+                newFolderBrowserThread();
+                folderBrowserThread.Start();
+            }
         }
 
         private void Setup_Load(object sender, EventArgs e)
@@ -122,8 +149,8 @@ namespace FTPbox.Forms
         {
             HideGroups();
             DisableGroups();
-            
-            switch(tab)
+
+            switch (tab)
             {
                 case AccountSetupTab.Login:
                     gLoginDetails.Enabled = true;
@@ -147,7 +174,7 @@ namespace FTPbox.Forms
                     gLanguage.Visible = true;
                     break;
             }
-            
+
             _prevTab = _currentTab;
             _currentTab = tab;
 
@@ -161,7 +188,7 @@ namespace FTPbox.Forms
         /// </summary>
         private void PopulateLanguages()
         {
-            cLanguages.Items.Clear();            
+            cLanguages.Items.Clear();
             cLanguages.Items.AddRange(Common.FormattedLanguageList);
             // Default to English
             cLanguages.SelectedIndex = Common.SelectedLanguageIndex;
@@ -174,9 +201,9 @@ namespace FTPbox.Forms
         private void CheckCurrentLanguage()
         {
             var locallangtwoletter = System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName;
-            
+
             if (Common.LanguageList.ContainsKey(locallangtwoletter))
-                cLanguages.SelectedIndex = Common.LanguageList.Keys.ToList().IndexOf(locallangtwoletter);            
+                cLanguages.SelectedIndex = Common.LanguageList.Keys.ToList().IndexOf(locallangtwoletter);
         }
 
         /// <summary>
@@ -197,7 +224,7 @@ namespace FTPbox.Forms
             labUN.Text = Common.Languages[UiControl.Username];
             labPass.Text = Common.Languages[UiControl.Password];
             cAskForPass.Text = Common.Languages[UiControl.AskForPassword];
-        
+
             // Local Folder
             gLocalFolder.Text = Common.Languages[UiControl.LocalFolder];
             rDefaultLocalFolder.Text = Common.Languages[UiControl.DefaultLocalFolder];
@@ -207,7 +234,7 @@ namespace FTPbox.Forms
             // Remote Folder
             gRemoteFolder.Text = Common.Languages[UiControl.RemotePath];
             labFullPath.Text = Common.Languages[UiControl.FullRemotePath];
-    
+
             // Selective Sync
             gSelectiveSync.Text = Common.Languages[UiControl.SelectiveSync];
             rSyncAll.Text = Common.Languages[UiControl.SyncAllFiles];
@@ -279,6 +306,8 @@ namespace FTPbox.Forms
         /// </summary>
         private void PopulateRemoteList()
         {
+            Program.Account.Paths.Remote = "/";
+
             tRemoteList.Nodes.Clear();
 
             var first = new TreeNode { Text = "/" };
@@ -484,12 +513,7 @@ namespace FTPbox.Forms
             Hide();
         }
 
-        private void bBrowse_Click(object sender, EventArgs e)
-        {
-            _fbd.ShowDialog();
-            if (_fbd.SelectedPath != string.Empty)
-                tLocalPath.Text = _fbd.SelectedPath;
-        }
+        
 
         private void cMode_SelectedIndexChanged(object sender, EventArgs e)
         {
@@ -498,8 +522,8 @@ namespace FTPbox.Forms
             labKeyPath.Text = string.Empty;
             cEncryption.Items.Clear();
             cEncryption.Items.AddRange(cMode.SelectedIndex == 0
-                ? new object[] {"None", "require explicit FTP over TLS", "require implicit FTP over TLS"}
-                : new object[] {"Normal", "public key authentication"});
+                ? new object[] { "None", "require explicit FTP over TLS", "require implicit FTP over TLS" }
+                : new object[] { "Normal", "public key authentication" });
             cEncryption.SelectedIndex = 0;
 
             labEncryption.Text = cMode.SelectedIndex == 0 ? Common.Languages[UiControl.Encryption] : Common.Languages[UiControl.Authentication];
@@ -534,7 +558,7 @@ namespace FTPbox.Forms
                     Settings.General.DefaultProfile--;
                     Settings.SaveGeneral();
                 }
-                
+
                 ((fMain)Tag).ExitedFromTray = true;
                 ((fMain)Tag).KillTheProcess();
             }
@@ -555,14 +579,14 @@ namespace FTPbox.Forms
         }
 
         private void rDefaultLocalFolder_CheckedChanged(object sender, EventArgs e)
-        {            
+        {
             bBrowse.Enabled = !rDefaultLocalFolder.Checked;
 
             SetDefaultLocalPath();
         }
 
         private void rCustomLocalFolder_CheckedChanged(object sender, EventArgs e)
-        {            
+        {
             bBrowse.Enabled = rCustomLocalFolder.Checked;
         }
 
@@ -644,33 +668,33 @@ namespace FTPbox.Forms
 
         private void Setup_RightToLeftLayoutChanged(object sender, EventArgs e)
         {
-            gLanguage.RightToLeft      = RightToLeftLayout ? RightToLeft.Yes : RightToLeft.No;
-            gLoginDetails.RightToLeft  = RightToLeftLayout ? RightToLeft.Yes : RightToLeft.No;
-            gLocalFolder.RightToLeft   = RightToLeftLayout ? RightToLeft.Yes : RightToLeft.No;
-            gRemoteFolder.RightToLeft  = RightToLeftLayout ? RightToLeft.Yes : RightToLeft.No;
+            gLanguage.RightToLeft = RightToLeftLayout ? RightToLeft.Yes : RightToLeft.No;
+            gLoginDetails.RightToLeft = RightToLeftLayout ? RightToLeft.Yes : RightToLeft.No;
+            gLocalFolder.RightToLeft = RightToLeftLayout ? RightToLeft.Yes : RightToLeft.No;
+            gRemoteFolder.RightToLeft = RightToLeftLayout ? RightToLeft.Yes : RightToLeft.No;
             gSelectiveSync.RightToLeft = RightToLeftLayout ? RightToLeft.Yes : RightToLeft.No;
 
             // Inherit manually
-            tRemoteList.RightToLeft       = RightToLeftLayout ? RightToLeft.Yes : RightToLeft.No;
-            cAskForPass.RightToLeft       = RightToLeftLayout ? RightToLeft.Yes : RightToLeft.No;
+            tRemoteList.RightToLeft = RightToLeftLayout ? RightToLeft.Yes : RightToLeft.No;
+            cAskForPass.RightToLeft = RightToLeftLayout ? RightToLeft.Yes : RightToLeft.No;
             tRemoteList.RightToLeftLayout = RightToLeftLayout;
-            
+
             // Buttons
             bPrevious.Location = RightToLeftLayout ? new Point(174, 223) : new Point(235, 223);
-            bNext.Location     = RightToLeftLayout ? new Point(93, 223) : new Point(316, 223);
-            bFinish.Location   = RightToLeftLayout ? new Point(12, 223) : new Point(397, 223);
-            
+            bNext.Location = RightToLeftLayout ? new Point(93, 223) : new Point(316, 223);
+            bFinish.Location = RightToLeftLayout ? new Point(12, 223) : new Point(397, 223);
+
             // Relocate controls where necessary
-            cMode.Location      = RightToLeftLayout ? new Point(261, 27) : new Point(145, 27);
-            tHost.Location      = RightToLeftLayout ? new Point(94, 81) : new Point(145, 81);
-            labColon.Location   = RightToLeftLayout ? new Point(78, 84) : new Point(375, 84); 
-            nPort.Location      = RightToLeftLayout ? new Point(15, 81) : new Point(391, 81);
-            tUsername.Location  = RightToLeftLayout ? new Point(15, 107) : new Point(145, 107);
-            tPass.Location      = RightToLeftLayout ? new Point(15, 133) : new Point(145, 133);
+            cMode.Location = RightToLeftLayout ? new Point(261, 27) : new Point(145, 27);
+            tHost.Location = RightToLeftLayout ? new Point(94, 81) : new Point(145, 81);
+            labColon.Location = RightToLeftLayout ? new Point(78, 84) : new Point(375, 84);
+            nPort.Location = RightToLeftLayout ? new Point(15, 81) : new Point(391, 81);
+            tUsername.Location = RightToLeftLayout ? new Point(15, 107) : new Point(145, 107);
+            tPass.Location = RightToLeftLayout ? new Point(15, 133) : new Point(145, 133);
             labKeyPath.Location = RightToLeftLayout ? new Point(15, 57) : new Point(324, 57);
 
-            tLocalPath.Location      = RightToLeftLayout ? new Point(95, 133) : new Point(15, 133);
-            bBrowse.Location         = RightToLeftLayout ? new Point(15, 131) : new Point(375, 131);
+            tLocalPath.Location = RightToLeftLayout ? new Point(95, 133) : new Point(15, 133);
+            bBrowse.Location = RightToLeftLayout ? new Point(15, 131) : new Point(375, 131);
             tFullRemotePath.Location = RightToLeftLayout ? new Point(15, 29) : new Point(122, 29);
         }
 
