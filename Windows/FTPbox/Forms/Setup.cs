@@ -44,8 +44,6 @@ namespace FTPbox.Forms
             cMode.SelectedIndex = 0;
 
             newFolderBrowserThread();
-
-            
         }
 
         private void newFolderBrowserThread()
@@ -513,7 +511,7 @@ namespace FTPbox.Forms
             Hide();
         }
 
-        
+
 
         private void cMode_SelectedIndexChanged(object sender, EventArgs e)
         {

@@ -37,7 +37,8 @@ namespace FTPboxLib
         public SyncQueue(AccountController account)
         {
             _controller = account;
-            sync.DoWork += new DoWorkEventHandler((o, n) => {
+            sync.DoWork += new DoWorkEventHandler((o, n) =>
+            {
                 Run();
             });
         }
@@ -63,37 +64,37 @@ namespace FTPboxLib
                 }
             }
             else switch (item.ActionType)
-            {
-                case ChangeAction.deleted:
-                    foreach (var i in this.ToList().Where(x => x.NewCommonPath == item.CommonPath))
-                    {
-                        if (i.ActionType == ChangeAction.renamed)
+                {
+                    case ChangeAction.deleted:
+                        foreach (var i in this.ToList().Where(x => x.NewCommonPath == item.CommonPath))
                         {
-                            base[IndexOf(i)].ActionType = ChangeAction.deleted;
-                            base[IndexOf(i)].SkipNotification = true;
+                            if (i.ActionType == ChangeAction.renamed)
+                            {
+                                base[IndexOf(i)].ActionType = ChangeAction.deleted;
+                                base[IndexOf(i)].SkipNotification = true;
+                            }
+                            else
+                                Remove(i);
                         }
-                        else
-                            Remove(i);
-                    }
-                    break;
-                case ChangeAction.renamed:
-                    foreach (var i in this.ToList().Where(x => x.NewCommonPath == item.CommonPath && x.ActionType == ChangeAction.renamed))
-                    {
-                        base[IndexOf(i)].Item.NewFullPath = item.Item.NewFullPath;
-                    }
-                    foreach (var i in this.ToList().Where(x => x.CommonPath == item.CommonPath))
-                    {
-                        if (i.ActionType == ChangeAction.changed || i.ActionType == ChangeAction.created)
+                        break;
+                    case ChangeAction.renamed:
+                        foreach (var i in this.ToList().Where(x => x.NewCommonPath == item.CommonPath && x.ActionType == ChangeAction.renamed))
                         {
-                            // Delete old file
-                            base[IndexOf(i)].ActionType = ChangeAction.deleted;
-                            // Convert new item to ChangeAction : create
-                            item.ActionType = ChangeAction.created;
-                            item.Item.FullPath = item.Item.NewFullPath;
+                            base[IndexOf(i)].Item.NewFullPath = item.Item.NewFullPath;
                         }
-                    }
-                    break;
-                default:
+                        foreach (var i in this.ToList().Where(x => x.CommonPath == item.CommonPath))
+                        {
+                            if (i.ActionType == ChangeAction.changed || i.ActionType == ChangeAction.created)
+                            {
+                                // Delete old file
+                                base[IndexOf(i)].ActionType = ChangeAction.deleted;
+                                // Convert new item to ChangeAction : create
+                                item.ActionType = ChangeAction.created;
+                                item.Item.FullPath = item.Item.NewFullPath;
+                            }
+                        }
+                        break;
+                    default:
                         try
                         {
                             foreach (var i in this.ToList().Where(x => x.NewCommonPath == item.CommonPath))
@@ -106,12 +107,13 @@ namespace FTPboxLib
                                 else
                                     RemoveAt(IndexOf(i));
                             }
-                        } catch (NullReferenceException ex)
+                        }
+                        catch (NullReferenceException ex)
                         {
                             throw ex;
                         }
-                    break;
-            }
+                        break;
+                }
 
             item.AddedOn = DateTime.Now;
             base.Add(item);
@@ -146,7 +148,7 @@ namespace FTPboxLib
                 {
                     case ChangeAction.deleted:
                         DeleteItem(item);
-                        break;                        
+                        break;
                     case ChangeAction.renamed:
                         RenameItem(item);
                         break;
@@ -193,10 +195,10 @@ namespace FTPboxLib
             {
                 var lastFolder = _completedList.Last(x => x.Item.Type == ClientItemType.Folder && x.Status == StatusType.Success && !x.SkipNotification);
                 if (lastFolder.ActionType == ChangeAction.renamed)
-                    Notifications.Show( Common._name(lastFolder.CommonPath), ChangeAction.renamed, Common._name(lastFolder.NewCommonPath));
+                    Notifications.Show(Common._name(lastFolder.CommonPath), ChangeAction.renamed, Common._name(lastFolder.NewCommonPath));
                 else
                     Notifications.Show(lastFolder.Item.Name, lastFolder.ActionType, false);
-                
+
             }
             else if (folders > 0 && files == 0)
                 Notifications.Show(folders, false);
@@ -204,7 +206,7 @@ namespace FTPboxLib
             {
                 var lastFile = _completedList.Last(x => x.Item.Type == ClientItemType.File && x.Status == StatusType.Success && !x.SkipNotification);
                 if (lastFile.ActionType == ChangeAction.renamed)
-                    Notifications.Show( Common._name(lastFile.CommonPath), ChangeAction.renamed, Common._name(lastFile.NewCommonPath));
+                    Notifications.Show(Common._name(lastFile.CommonPath), ChangeAction.renamed, Common._name(lastFile.NewCommonPath));
                 else
                     Notifications.Show(lastFile.Item.Name, lastFile.ActionType, true);
             }
@@ -215,14 +217,14 @@ namespace FTPboxLib
             const string frmt = "{0, -9}{1, -20}{2, -8}{3, -8}{4, -7}";
             var head = string.Format(frmt, "Added On", "Common Path", "Action", "SyncTo", "Status");
             Log.Write(l.Info, head);
-            foreach (var i in _completedList.OrderBy(x=>x.AddedOn))
+            foreach (var i in _completedList.OrderBy(x => x.AddedOn))
                 Log.Write(l.Info, string.Format(frmt, i.AddedOn.FormatDate(), i.CommonPath, i.ActionType, i.SyncTo, i.Status));
 
             _completedList.RemoveAll(x => x.Status != StatusType.Waiting);
             _controller.LoadLocalFolders();
 
             if (_controller.Account.SyncMethod == SyncMethod.Automatic) SetTimer();
-        }               
+        }
 
         /// <summary>
         /// Moves the last item from the queue to the CompletedList and adds it to FileLog
@@ -230,12 +232,12 @@ namespace FTPboxLib
         /// <param name="status"></param>
         public void RemoveLast(StatusType status)
         {
-            _completedList.Add(new SyncQueueItem (_controller)
-            { 
-                Status = status, 
-                Item = Next.Item, 
-                ActionType = Next.ActionType, 
-                AddedOn = Next.AddedOn, 
+            _completedList.Add(new SyncQueueItem(_controller)
+            {
+                Status = status,
+                Item = Next.Item,
+                ActionType = Next.ActionType,
+                AddedOn = Next.AddedOn,
                 CompletedOn = DateTime.Now,
                 SkipNotification = Next.SkipNotification
             });
@@ -285,7 +287,7 @@ namespace FTPboxLib
         /// </summary>
         private void SetTimer()
         {
-            _tSync = new Timer(state => Add(new SyncQueueItem (_controller)
+            _tSync = new Timer(state => Add(new SyncQueueItem(_controller)
             {
                 Item = new ClientItem
                 {
@@ -336,7 +338,7 @@ namespace FTPboxLib
                     remoteFilesList.Add(x.FullPath);
                     globalSize += x.Size;
                 }
-                
+
             }
 
             remoteFilesList = remoteFilesList.ConvertAll(x => _controller.GetCommonPath(x, false));
@@ -353,16 +355,17 @@ namespace FTPboxLib
                 _controller.Client.Reconnect();
                 return;
             }
-            
+
             var di = new DirectoryInfo(folder.LocalPath);
             foreach (var d in di.GetDirectories("*", SearchOption.AllDirectories).Where(x => !remoteFilesList.Contains(_controller.GetCommonPath(x.FullName, true))))
             {
                 if (!_controller.ItemGetsSynced(d.FullName, true)) continue;
 
                 // TODO: Base add instead?
-                Add(new SyncQueueItem (_controller)
+                Add(new SyncQueueItem(_controller)
                 {
-                    Item = new ClientItem{
+                    Item = new ClientItem
+                    {
                         Name = d.Name,
                         FullPath = d.FullName,
                         Type = ClientItemType.Folder,
@@ -397,13 +400,13 @@ namespace FTPboxLib
                         SyncTo = SyncTo.Remote
                     });
             }
-        }        
+        }
 
         /// <summary>
         /// Delete the specified item (folder or file)
         /// </summary>
         private void DeleteItem(SyncQueueItem item)
-        {            
+        {
             try
             {
                 if (item.SyncTo == SyncTo.Local)
@@ -482,7 +485,7 @@ namespace FTPboxLib
                     RemoveAt(0);
                 else
                     RemoveLast(status == TransferStatus.Success ? StatusType.Success : StatusType.Failure);
-                                   
+
                 return;
             }
             if (item.Item.Type == ClientItemType.Folder && item.SyncTo == SyncTo.Remote)
@@ -505,7 +508,7 @@ namespace FTPboxLib
 
             if (!_controller.Client.CheckWorkingDirectory())
             {
-                RemoveLast(StatusType.Failure); 
+                RemoveLast(StatusType.Failure);
                 return;
             }
 
@@ -518,21 +521,21 @@ namespace FTPboxLib
                 if (!_controller.ItemGetsSynced(cpath)) continue;
 
                 var sqi = new SyncQueueItem(_controller)
-                    {
-                        Status = StatusType.Success,
-                        Item = f,
-                        ActionType = ChangeAction.created,
-                        AddedOn = DateTime.Now,
-                        CompletedOn = DateTime.Now,
-                        SyncTo = SyncTo.Local
-                    };
+                {
+                    Status = StatusType.Success,
+                    Item = f,
+                    ActionType = ChangeAction.created,
+                    AddedOn = DateTime.Now,
+                    CompletedOn = DateTime.Now,
+                    SyncTo = SyncTo.Local
+                };
 
                 switch (f.Type)
                 {
                     case ClientItemType.Folder:
-                        if (this.Any(x => x.CommonPath == sqi.CommonPath && x.ActionType == ChangeAction.deleted && x.SyncTo == SyncTo.Remote))                    
+                        if (this.Any(x => x.CommonPath == sqi.CommonPath && x.ActionType == ChangeAction.deleted && x.SyncTo == SyncTo.Remote))
                             continue;
-                    
+
                         if (!Directory.Exists(lpath))
                         {
                             _controller.FolderWatcher.Pause();       // Pause Watchers
@@ -570,14 +573,29 @@ namespace FTPboxLib
                 return;
             }
 
+            // reduction CPU complexity during searching and exploiting cache & memory
+            var tmpItems = allItems;
+
             // Look for local files that should be deleted
             foreach (var local in new DirectoryInfo(item.LocalPath).GetFiles("*", SearchOption.AllDirectories))
             {
                 var cpath = _controller.GetCommonPath(local.FullName, true);
                 // continue if the file is ignored
                 if (!_controller.ItemGetsSynced(cpath)) continue;
+
+                bool found = false;
+
                 // continue if the file was found in the remote list
-                if (allItems.Any(x => _controller.GetCommonPath(x.FullPath, false) == cpath)) continue;
+                for (int i = 0; i < tmpItems.Count; i++)
+                    if (_controller.GetCommonPath(tmpItems[i].FullPath, false) == cpath)
+                    {
+                        tmpItems.RemoveAt(i);
+                        found = true;
+                        break;
+                    }
+
+                if (found) continue;
+
                 // continue if the file is not in the log, or is changed compared to the logged data TODO: Maybe send to remote folder?
                 if (_controller.FileLog.Files.All(x => x.CommonPath != cpath) ||
                     _controller.FileLog.Files.Find(x => x.CommonPath == cpath).Local != local.LastWriteTime)
@@ -646,7 +664,7 @@ namespace FTPboxLib
         {
             var locLwt = File.GetLastWriteTime(item.LocalPath);
             var remLwt = (_controller.Account.Protocol != FtpProtocol.SFTP) ? _controller.Client.GetLwtOf(item.CommonPath) : item.Item.LastWriteTime;
-            
+
             var locLog = _controller.FileLog.GetLocal(item.CommonPath);
             var remLog = _controller.FileLog.GetRemote(item.CommonPath);
 
@@ -664,7 +682,7 @@ namespace FTPboxLib
             if (rResult > 0 && lResult > 0 && remDif.TotalSeconds > 1 && locDif.TotalSeconds > 1)
             {
                 if (remDif.TotalSeconds > locDif.TotalSeconds)
-                    status = _controller.Client.SafeDownload(item);                                    
+                    status = _controller.Client.SafeDownload(item);
             }
             else if (rResult > 0 && remDif.TotalSeconds > 1)
                 status = _controller.Client.SafeDownload(item);
