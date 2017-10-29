@@ -122,12 +122,13 @@ namespace FTPbox.Forms
         private void ListingCompleted(object sender, RunWorkerCompletedEventArgs e)
         {
             Program.Account.FolderWatcher.Resume();
+            Invoke(new MethodInvoker(() => SyncToolStripMenuItem.Enabled = cManually.Checked && !Program.Account.SyncQueue.sync.IsBusy && !OfflineMode));
         }
 
         private void StartListing(object sender, DoWorkEventArgs e)
         {
             //Program.Account.SyncQueue = new SyncQueue(Program.Account);
-
+            Invoke(new MethodInvoker(() => SyncToolStripMenuItem.Enabled = false));
             Program.Account.FolderWatcher.Pause();
 
             var cpath = Program.Account.GetCommonPath(Program.Account.Paths.Local, true);
@@ -165,6 +166,8 @@ namespace FTPbox.Forms
         /// </summary>
         private void StartUpWork(object sender, DoWorkEventArgs e)
         {
+            SyncToolStripMenuItem.Enabled = false;
+
             Log.Write(l.Debug, "Internet connection available: {0}", ConnectedToInternet().ToString());
 
             Notifications.ChangeTrayText(MessageType.NullSize);
@@ -204,7 +207,7 @@ namespace FTPbox.Forms
             if (listingWorker.IsBusy)
             {
                 listingWorker.CancelAsync();
-                while (listingWorker.IsBusy);
+                while (listingWorker.IsBusy) ;
             }
 
             listingWorker.RunWorkerAsync();
@@ -1516,7 +1519,7 @@ namespace FTPbox.Forms
 
         private void cManually_CheckedChanged(object sender, EventArgs e)
         {
-            SyncToolStripMenuItem.Enabled = cManually.Checked || !Program.Account.SyncQueue.sync.IsBusy;
+            SyncToolStripMenuItem.Enabled = cManually.Checked && !Program.Account.SyncQueue.sync.IsBusy && !OfflineMode;
             Program.Account.Account.SyncMethod = (cManually.Checked) ? SyncMethod.Manual : SyncMethod.Automatic;
             Settings.SaveProfile();
 
@@ -1534,7 +1537,7 @@ namespace FTPbox.Forms
 
         private void cAuto_CheckedChanged(object sender, EventArgs e)
         {
-            SyncToolStripMenuItem.Enabled = !cAuto.Checked || !Program.Account.SyncQueue.sync.IsBusy;
+            SyncToolStripMenuItem.Enabled = !cAuto.Checked && !Program.Account.SyncQueue.sync.IsBusy && !OfflineMode;
             Program.Account.Account.SyncMethod = (!cAuto.Checked) ? SyncMethod.Manual : SyncMethod.Automatic;
             Settings.SaveProfile();
 
@@ -1635,9 +1638,12 @@ namespace FTPbox.Forms
 
         private void SyncToolStripMenuItem_Click(object sender, EventArgs e)
         {
+            SyncToolStripMenuItem.Enabled = false;
             if (!Program.Account.Client.isConnected) return;
 
             StartRemoteSync(".");
+
+            SyncToolStripMenuItem.Enabled = cManually.Checked && !Program.Account.SyncQueue.sync.IsBusy && !OfflineMode;
         }
 
         public bool ExitedFromTray;

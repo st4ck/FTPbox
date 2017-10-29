@@ -574,7 +574,11 @@ namespace FTPboxLib
             }
 
             // reduction CPU complexity during searching and exploiting cache & memory
-            var tmpItems = allItems;
+            List<string> tmpItems = new List<string>();
+            for (int i = 0; i < allItems.Count; i++)
+            {
+                tmpItems.Add(_controller.GetCommonPath(allItems[i].FullPath, false));
+            }
 
             // Look for local files that should be deleted
             foreach (var local in new DirectoryInfo(item.LocalPath).GetFiles("*", SearchOption.AllDirectories))
@@ -587,8 +591,9 @@ namespace FTPboxLib
 
                 // continue if the file was found in the remote list
                 for (int i = 0; i < tmpItems.Count; i++)
-                    if (_controller.GetCommonPath(tmpItems[i].FullPath, false) == cpath)
+                    if (tmpItems[i] == cpath)
                     {
+                        // remove element if file is found reducing complexity
                         tmpItems.RemoveAt(i);
                         found = true;
                         break;
@@ -628,14 +633,36 @@ namespace FTPboxLib
                         SyncTo = SyncTo.Local
                     });
             }
+
+            // assignment for garbage collector
+            tmpItems = new List<string>();
+            for (int i = 0; i < allItems.Count; i++)
+            {
+                tmpItems.Add(_controller.GetCommonPath(allItems[i].FullPath, false));
+            }
+
             // Look for local folders that should be deleted
             foreach (var local in new DirectoryInfo(item.LocalPath).GetDirectories("*", SearchOption.AllDirectories))
             {
                 var cpath = _controller.GetCommonPath(local.FullName, true);
                 // continue if the folder is ignored
                 if (!_controller.ItemGetsSynced(cpath)) continue;
+
                 // continue if the folder was found in the remote list
-                if (allItems.Any(x => _controller.GetCommonPath(x.FullPath, false) == cpath)) continue;
+                bool found = false;
+
+                // continue if the file was found in the remote list
+                for (int i = 0; i < tmpItems.Count; i++)
+                    if (tmpItems[i] == cpath)
+                    {
+                        // remove element if file is found reducing complexity
+                        tmpItems.RemoveAt(i);
+                        found = true;
+                        break;
+                    }
+
+                if (found) continue;
+
                 // continue if the folder is not in the log TODO: Maybe send to remote folder?
                 if (_controller.FileLog.Folders.All(x => x != cpath)) continue;
 
